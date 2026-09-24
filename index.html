@@ -7,8 +7,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0d1117">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
 <title>Sekolah Pribadi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -1012,29 +1010,80 @@ async function renderMateri() {
   }
 }
 
+function renderMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/^#{1,4}\s*/gm, '')
+    .replace(/^-{3,}$/gm, '<hr>')
+    .replace(/_{3,}/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+    .replace(/\n\n+/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/<p>\s*<\/p>/g, '')
+    .trim();
+}
+
+function bersihkanTeks(text) {
+  if (!text) return '';
+  return text
+    .replace(/^#.*$/m, '')
+    .replace(/^SEKOLAH PRIBADI.*/m, '')
+    .replace(/^Tema:.*/m, '')
+    .replace(/^TEMA:.*/m, '')
+    .trim();
+}
+
 function tampilkanMateri(data) {
   materiAktif = data;
-  const sections = data.materi ? data.materi.split(/\n(?=\d\.|\#\#)/) : [];
-
   let html = '';
+
   if (data.materi) {
+    const bersih = bersihkanTeks(data.materi);
+    // Pecah per section berdasarkan nomor atau header caps
+    const bagian = bersih.split(/\n(?=\d+\.\s+[A-Z]|[A-Z]{4,})/);
     html += '<div class="materi-section">';
-    html += '<div class="materi-section-title">Materi Hari Ini</div>';
-    html += '<div class="materi-body">' +
-      data.materi.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                 .replace(/\n\n/g, '</p><p>')
-                 .replace(/\n/g, '<br>');
-    html += '</div></div>';
+    bagian.forEach(function(b) {
+      if (!b.trim()) return;
+      // Cek apakah ada judul di baris pertama
+      const baris = b.split('\n');
+      const judulRaw = baris[0].trim();
+      const isJudul = /^(\d+\.\s+)?[A-Z][A-Z\s]{3,}/.test(judulRaw);
+      if (isJudul && baris.length > 1) {
+        const judul = judulRaw.replace(/^\d+\.\s+/, '');
+        const isi = baris.slice(1).join('\n').trim();
+        html += '<div class="materi-section-title">' + judul + '</div>';
+        html += '<div class="materi-body"><p>' + renderMarkdown(isi) + '</p></div>';
+      } else {
+        html += '<div class="materi-body"><p>' + renderMarkdown(b) + '</p></div>';
+      }
+    });
+    html += '</div>';
   }
 
   if (data.hukum) {
+    const hukumBersih = data.hukum
+      .replace(/^#.*SISIPAN.*$/m, '')
+      .replace(/^#.*HUKUM.*$/m, '')
+      .trim();
     html += '<div class="hukum-card">';
     html += '<div class="hukum-label">⚖️ Sisipan Hukum</div>';
-    html += '<div class="materi-body">' +
-      data.hukum.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/\n/g, '<br>');
-    html += '</div></div>';
+    const bagianHukum = hukumBersih.split(/\n(?=\d+\.\s+[A-Z]|[A-Z]{4,})/);
+    bagianHukum.forEach(function(b) {
+      if (!b.trim()) return;
+      const baris = b.split('\n');
+      const judulRaw = baris[0].trim();
+      const isJudul = /^(\d+\.\s+)?[A-Z][A-Z\s]{3,}/.test(judulRaw);
+      if (isJudul && baris.length > 1) {
+        const judul = judulRaw.replace(/^\d+\.\s+/, '');
+        const isi = baris.slice(1).join('\n').trim();
+        html += '<div class="materi-section-title" style="color:var(--amber)">' + judul + '</div>';
+        html += '<div class="materi-body"><p>' + renderMarkdown(isi) + '</p></div>';
+      } else {
+        html += '<div class="materi-body"><p>' + renderMarkdown(b) + '</p></div>';
+      }
+    });
+    html += '</div>';
   }
 
   document.getElementById('materiContent').innerHTML = html || '<div class="empty-state"><p>Materi kosong.</p></div>';
