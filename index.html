@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d1117">
+<title>Sekolah Pribadi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── TOKEN SISTEM ── */
+  :root {
+    --bg-deep:    #0d1117;
+    --bg-surface: #161b24;
+    --bg-card:    #1e2533;
+    --teal:       #4ecdc4;
+    --teal-dim:   #2a7a76;
+    --amber:      #f0a500;
+    --text-main:  #e8e6e1;
+    --text-muted: #7a8394;
+    --text-faint: #3d4455;
+    --radius:     14px;
+    --radius-sm:  8px;
+    font-size: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYAR (halaman) ── */
+  .screen { display: none; min-height: 100vh; padding-bottom: 80px; }
+  .screen.active { display: block; }
+
+  /* ── HEADER ── */
+  .app-header {
+    padding: 52px 24px 20px;
+    background: linear-gradient(180deg, rgba(13,17,23,0.98) 0%, transparent 100%);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .app-header .greeting {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    line-height: 1.2;
+    color: var(--text-main);
+  }
+  .app-header .sub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── NAVIGASI BAWAH ── */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--text-faint);
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 10px 0 20px;
+    z-index: 100;
+  }
+  .nav-item {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer; padding: 6px 16px; border-radius: var(--radius-sm);
+    transition: color 0.2s;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    border: none; background: none;
+  }
+  .nav-item.active { color: var(--teal); }
+  .nav-item svg { width: 22px; height: 22px; }
+
+  /* ── KARTU DASAR ── */
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 0 16px 12px;
+  }
+
+  /* ── DASHBOARD ── */
+  .dashboard-hero {
+    margin: 0 16px 16px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dashboard-hero::before {
+    content: '';
+    position: absolute; top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(78,205,196,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .streak-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 4rem;
+    color: var(--teal);
+    line-height: 1;
+  }
+  .streak-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .streak-row {
+    display: flex; gap: 6px; margin-top: 20px;
+  }
+  .streak-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--text-faint);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; color: var(--text-muted);
+    font-weight: 500;
+  }
+  .streak-dot.done { background: var(--teal-dim); color: var(--teal); }
+  .streak-dot.today { background: var(--teal); color: var(--bg-deep); }
+
+  .stats-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px; margin: 0 16px 12px;
+  }
+  .stat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.6rem;
+    color: var(--text-main);
+  }
+  .stat-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+
+  .tema-hari {
+    margin: 0 16px 12px;
+    background: linear-gradient(135deg, var(--teal-dim) 0%, #1e3a3a 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .tema-hari:active { transform: scale(0.98); }
+  .tema-hari .label {
+    font-size: 0.7rem;
+    color: var(--teal);
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .tema-hari .title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    color: var(--text-main);
+  }
+  .tema-hari .sub {
+    font-size: 0.75rem;
+    color: rgba(232,230,225,0.6);
+    margin-top: 6px;
+  }
+  .tema-hari .cta {
+    margin-top: 16px;
+    font-size: 0.78rem;
+    color: var(--teal);
+    font-weight: 500;
+  }
+
+  .section-title {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 0 16px;
+    margin-bottom: 10px;
+    margin-top: 20px;
+  }
+
+  .riwayat-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--text-faint);
+    cursor: pointer;
+  }
+  .riwayat-item:last-child { border-bottom: none; }
+  .riwayat-dot {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .riwayat-info { flex: 1; }
+  .riwayat-info .nama {
+    font-size: 0.88rem;
+    color: var(--text-main);
+    font-weight: 500;
+  }
+  .riwayat-info .tanggal {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .riwayat-skor {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.1rem;
+    color: var(--teal);
+  }
+
+  /* ── MATERI ── */
+  .materi-container { padding: 0 16px; }
+  .materi-header {
+    padding: 52px 16px 20px;
+    background: linear-gradient(180deg, rgba(13,17,23,0.98) 0%, transparent 100%);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .materi-tag {
+    display: inline-block;
+    background: var(--teal-dim);
+    color: var(--teal);
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+  .materi-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    line-height: 1.2;
+    color: var(--text-main);
+  }
+  .materi-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .materi-section {
+    margin-bottom: 24px;
+  }
+  .materi-section-title {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--amber);
+    font-weight: 500;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--text-faint);
+  }
+  .materi-body {
+    font-size: 0.92rem;
+    line-height: 1.75;
+    color: var(--text-main);
+  }
+  .materi-body p { margin-bottom: 12px; }
+
+  .hukum-card {
+    background: linear-gradient(135deg, #1a1f2e 0%, #1e2533 100%);
+    border-left: 3px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .hukum-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--amber);
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--teal);
+    color: var(--bg-deep);
+    border: none;
+    border-radius: var(--radius);
+    padding: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:active { opacity: 0.8; }
+  .btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--text-faint);
+    border-radius: var(--radius);
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  /* ── KUIS ── */
+  .kuis-progress {
+    height: 3px;
+    background: var(--text-faint);
+    border-radius: 2px;
+    margin: 0 16px 24px;
+  }
+  .kuis-progress-fill {
+    height: 100%;
+    background: var(--teal);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  .kuis-nomor {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+  .kuis-pertanyaan {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.25rem;
+    line-height: 1.4;
+    padding: 0 16px;
+    margin-bottom: 24px;
+    color: var(--text-main);
+  }
+  .kuis-pilihan {
+    margin: 0 16px 10px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: border-color 0.15s, background 0.15s;
+    font-size: 0.88rem;
+    color: var(--text-main);
+    line-height: 1.4;
+    text-align: left;
+    width: calc(100% - 32px);
+    font-family: 'DM Sans', sans-serif;
+  }
+  .kuis-pilihan:active { background: var(--bg-surface); }
+  .kuis-pilihan.selected { border-color: var(--teal); background: rgba(78,205,196,0.08); }
+  .kuis-pilihan.benar { border-color: var(--teal); background: rgba(78,205,196,0.12); }
+  .kuis-pilihan.salah { border-color: #e05555; background: rgba(224,85,85,0.08); }
+
+  .reflektif-area {
+    margin: 0 16px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1.5px solid var(--text-faint);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    width: calc(100% - 32px);
+    min-height: 140px;
+    resize: none;
+    line-height: 1.6;
+  }
+  .reflektif-area:focus {
+    outline: none;
+    border-color: var(--teal);
+  }
+  .reflektif-area::placeholder { color: var(--text-muted); }
+
+  .hasil-header {
+    text-align: center;
+    padding: 40px 24px 24px;
+  }
+  .hasil-skor {
+    font-family: 'DM Serif Display', serif;
+    font-size: 5rem;
+    color: var(--teal);
+    line-height: 1;
+  }
+  .hasil-dari { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+  .hasil-pesan {
+    font-size: 0.92rem;
+    color: var(--text-main);
+    margin-top: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── PROGRES ── */
+  .progres-minggu {
+    margin: 0 16px 12px;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .hari-row {
+    display: flex; gap: 8px; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .hari-item {
+    flex: 1; text-align: center;
+  }
+  .hari-nama {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .hari-lingkaran {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--text-faint);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin: 0 auto;
+  }
+  .hari-lingkaran.selesai { background: var(--teal-dim); color: var(--teal); }
+  .hari-lingkaran.aktif {
+    background: var(--teal);
+    color: var(--bg-deep);
+    box-shadow: 0 0 12px rgba(78,205,196,0.4);
+  }
+
+  .skor-chart {
+    margin-top: 12px;
+  }
+  .skor-bar-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .skor-bar-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .skor-bar-track {
+    flex: 1; height: 6px;
+    background: var(--text-faint);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .skor-bar-fill {
+    height: 100%;
+    background: var(--teal);
+    border-radius: 3px;
+    transition: width 0.8s ease;
+  }
+  .skor-bar-val {
+    font-size: 0.7rem;
+    color: var(--teal);
+    width: 30px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── SETTING ── */
+  .setting-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--text-faint);
+    cursor: pointer;
+  }
+  .setting-item:last-child { border-bottom: none; }
+  .setting-label { font-size: 0.88rem; color: var(--text-main); }
+  .setting-value { font-size: 0.8rem; color: var(--text-muted); }
+  .setting-input {
+    background: var(--bg-card);
+    border: 1px solid var(--text-faint);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text-main);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    width: 100%;
+    margin-top: 8px;
+  }
+  .setting-input:focus { outline: none; border-color: var(--teal); }
+
+  /* ── LOADING ── */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg-deep);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s;
+  }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .loading-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.8rem;
+    color: var(--text-main);
+    margin-top: 20px;
+  }
+  .loading-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 2px solid var(--text-faint);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--teal-dim);
+    color: var(--text-main);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.3s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 32px;
+    color: var(--text-muted);
+  }
+  .empty-state svg { opacity: 0.3; margin-bottom: 16px; }
+  .empty-state p { font-size: 0.88rem; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-title">Sekolah Pribadi</div>
+  <div class="loading-sub">Menyiapkan harimu...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LAYAR 1: DASHBOARD                      -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen active" id="screen-dashboard">
+  <div class="app-header">
+    <div class="greeting" id="greetingText">Selamat pagi</div>
+    <div class="sub" id="headerDate">—</div>
+  </div>
+
+  <!-- Streak hero -->
+  <div class="dashboard-hero">
+    <div class="streak-number" id="streakCount">0</div>
+    <div class="streak-label">hari berturut-turut</div>
+    <div class="streak-row" id="streakRow"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" id="statTotalHari">0</div>
+      <div class="stat-label">hari belajar</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statRataRata">—</div>
+      <div class="stat-label">rata-rata skor</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statMinggu">0</div>
+      <div class="stat-label">minggu aktif</div>
+    </div>
+  </div>
+
+  <!-- Tema hari ini -->
+  <div class="tema-hari" id="temaHariCard" onclick="goToMateri()">
+    <div class="label">Hari ini</div>
+    <div class="title" id="temaHariTitle">—</div>
+    <div class="sub" id="temaHariSub">—</div>
+    <div class="cta">Baca materi →</div>
+  </div>
+
+  <!-- Riwayat singkat -->
+  <div class="section-title">Terakhir dibaca</div>
+  <div class="card" id="riwayatSingkat" style="padding:0">
+    <div class="empty-state">
+      <p>Belum ada riwayat.<br>Mulai baca materi hari ini.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LAYAR 2: MATERI                         -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen" id="screen-materi">
+  <div class="materi-header">
+    <div class="materi-tag" id="materiTag">—</div>
+    <div class="materi-title" id="materiTitle">—</div>
+    <div class="materi-date" id="materiDate">—</div>
+  </div>
+  <div class="materi-container" id="materiContent">
+    <div class="empty-state">
+      <p>Materi sedang disiapkan.<br>Cek kembali setelah jam 7 pagi.</p>
+    </div>
+  </div>
+  <div style="padding: 0 16px;">
+    <button class="btn-primary" onclick="goToKuis()" id="btnMulaiKuis">Mulai Kuis</button>
+    <button class="btn-secondary" onclick="showScreen('dashboard')">Kembali</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LAYAR 3: KUIS                           -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen" id="screen-kuis">
+  <div class="app-header">
+    <div class="greeting">Kuis Harian</div>
+    <div class="sub" id="kuisSubHeader">—</div>
+  </div>
+  <div class="kuis-progress">
+    <div class="kuis-progress-fill" id="kuisProgressBar" style="width:0%"></div>
+  </div>
+  <div class="kuis-nomor" id="kuisNomor">Soal 1 dari 11</div>
+  <div class="kuis-pertanyaan" id="kuisPertanyaan">—</div>
+  <div id="kuisPilihanContainer"></div>
+  <div style="padding: 0 16px; margin-top: 16px;">
+    <button class="btn-primary" id="btnLanjutKuis" onclick="lanjutKuis()" style="display:none">Lanjut</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LAYAR 4: HASIL KUIS                     -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen" id="screen-hasil">
+  <div class="hasil-header">
+    <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:8px;">Skor hari ini</div>
+    <div class="hasil-skor" id="hasilSkor">0</div>
+    <div class="hasil-dari" id="hasilDari">dari 10 soal</div>
+    <div class="hasil-pesan" id="hasilPesan">—</div>
+  </div>
+  <div class="card">
+    <div class="materi-section-title">Jawaban reflektifmu</div>
+    <div style="font-size:0.85rem;color:var(--text-main);line-height:1.7;" id="hasilReflektif">—</div>
+  </div>
+  <div style="padding: 0 16px;">
+    <button class="btn-primary" onclick="showScreen('dashboard')">Kembali ke Beranda</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LAYAR 5: PROGRES                        -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen" id="screen-progres">
+  <div class="app-header">
+    <div class="greeting">Perjalananmu</div>
+    <div class="sub" id="progresSubHeader">—</div>
+  </div>
+
+  <!-- Minggu ini -->
+  <div class="section-title">Minggu ini</div>
+  <div class="progres-minggu">
+    <div class="hari-row" id="hariRow"></div>
+  </div>
+
+  <!-- Skor per tema -->
+  <div class="section-title">Rata-rata skor per tema</div>
+  <div class="card" id="skorPerTema"></div>
+
+  <!-- Semua riwayat -->
+  <div class="section-title">Semua sesi</div>
+  <div class="card" id="riwayatLengkap" style="padding:0"></div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LAYAR 6: SETTING                        -->
+<!-- ═══════════════════════════════════════ -->
+<div class="screen" id="screen-setting">
+  <div class="app-header">
+    <div class="greeting">Pengaturan</div>
+    <div class="sub">Sesuaikan sekolahmu</div>
+  </div>
+
+  <div class="card" style="padding:0">
+    <div class="setting-item" style="flex-direction:column;align-items:flex-start">
+      <div class="setting-label">Nama panggilanmu</div>
+      <input class="setting-input" id="settingNama" placeholder="Gus Sohe" oninput="simpanSetting()">
+    </div>
+    <div class="setting-item" style="flex-direction:column;align-items:flex-start">
+      <div class="setting-label">URL Apps Script</div>
+      <input class="setting-input" id="settingUrl" placeholder="https://script.google.com/macros/s/..." oninput="simpanSetting()">
+      <div style="font-size:0.7rem;color:var(--text-muted);margin-top:6px;">Dapatkan dari Apps Script → Deploy → Web App URL</div>
+    </div>
+  </div>
+
+  <div class="section-title">Tentang</div>
+  <div class="card" style="padding:0">
+    <div class="setting-item">
+      <div class="setting-label">Hari pertama belajar</div>
+      <div class="setting-value" id="infoHariPertama">—</div>
+    </div>
+    <div class="setting-item">
+      <div class="setting-label">Total sesi selesai</div>
+      <div class="setting-value" id="infoTotalSesi">0</div>
+    </div>
+    <div class="setting-item">
+      <div class="setting-label">Versi</div>
+      <div class="setting-value">1.0.0</div>
+    </div>
+  </div>
+
+  <div style="padding:16px">
+    <button class="btn-secondary" onclick="resetData()" style="color:#e05555;border-color:#e05555">Reset semua data</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- NAVIGASI BAWAH                          -->
+<!-- ═══════════════════════════════════════ -->
+<nav class="nav-bar">
+  <button class="nav-item active" id="nav-dashboard" onclick="showScreen('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+    Beranda
+  </button>
+  <button class="nav-item" id="nav-materi" onclick="showScreen('materi')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+    Materi
+  </button>
+  <button class="nav-item" id="nav-progres" onclick="showScreen('progres')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Progres
+  </button>
+  <button class="nav-item" id="nav-setting" onclick="showScreen('setting')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Atur
+  </button>
+</nav>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE & STORAGE
+// ═══════════════════════════════════════════════
+
+const STORAGE_KEY = 'sekolahPribadi_v1';
+
+function loadData() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || defaultData();
+  } catch(e) { return defaultData(); }
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function defaultData() {
+  return {
+    nama: '',
+    scriptUrl: '',
+    hariPertama: null,
+    sesiList: [],   // [{tanggal, tema, skor, totalSoal, reflektif, materi, hukum}]
+    materiCache: {} // {YYYY-MM-DD: {tema, materi, hukum, soal}}
+  };
+}
+
+let appData = loadData();
+let kuisState = { soalList: [], current: 0, jawaban: [], reflektif: '' };
+let materiAktif = null;
+
+// ═══════════════════════════════════════════════
+// NAVIGASI
+// ═══════════════════════════════════════════════
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  const navEl = document.getElementById('nav-' + name);
+  if (navEl) navEl.classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'progres') renderProgres();
+  if (name === 'setting') renderSetting();
+}
+
+function goToMateri() {
+  renderMateri();
+  showScreen('materi');
+}
+
+function goToKuis() {
+  if (!materiAktif || !materiAktif.soal) {
+    showToast('Materi belum dimuat');
+    return;
+  }
+  initKuis(materiAktif.soal);
+  showScreen('kuis');
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+
+const TEMA = {
+  1: { nama: 'Memahami Manusia', emoji: '🧠' },
+  2: { nama: 'Memahami Uang',    emoji: '💰' },
+  3: { nama: 'Komunikasi',       emoji: '💬' },
+  4: { nama: 'Memahami Tubuh',   emoji: '🫀' },
+  5: { nama: 'Personal Branding',emoji: '✨' },
+  6: { nama: 'Kecerdasan Emosi', emoji: '🌊' },
+  0: null
+};
+
+const HARI_NAMA = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+
+function formatTanggal(dateStr) {
+  const d = new Date(dateStr);
+  return d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 11) return 'Selamat pagi';
+  if (h < 15) return 'Selamat siang';
+  if (h < 18) return 'Selamat sore';
+  return 'Selamat malam';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function hitungStreak() {
+  const sesiDates = [...new Set(appData.sesiList.map(s => s.tanggal))].sort().reverse();
+  if (!sesiDates.length) return 0;
+  let streak = 0;
+  let cek = new Date();
+  for (let i = 0; i < 60; i++) {
+    const str = cek.getFullYear() + '-' + String(cek.getMonth()+1).padStart(2,'0') + '-' + String(cek.getDate()).padStart(2,'0');
+    if (sesiDates.includes(str)) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+    cek.setDate(cek.getDate() - 1);
+  }
+  return streak;
+}
+
+// ═══════════════════════════════════════════════
+// RENDER DASHBOARD
+// ═══════════════════════════════════════════════
+
+function renderDashboard() {
+  const now = new Date();
+  const hari = now.getDay();
+  const tema = TEMA[hari];
+
+  // Greeting
+  const nama = appData.nama || 'Kamu';
+  document.getElementById('greetingText').textContent = greeting() + ', ' + nama;
+  document.getElementById('headerDate').textContent =
+    HARI_NAMA[hari] + ', ' + now.getDate() + ' ' + BULAN[now.getMonth()] + ' ' + now.getFullYear();
+
+  // Streak
+  const streak = hitungStreak();
+  document.getElementById('streakCount').textContent = streak;
+
+  // Streak dots (7 hari terakhir)
+  const row = document.getElementById('streakRow');
+  row.innerHTML = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const done = appData.sesiList.some(s => s.tanggal === dStr);
+    const isToday = i === 0;
+    const dot = document.createElement('div');
+    dot.className = 'streak-dot' + (isToday ? ' today' : done ? ' done' : '');
+    dot.textContent = HARI_NAMA[d.getDay()];
+    row.appendChild(dot);
+  }
+
+  // Stats
+  const total = appData.sesiList.length;
+  const skorAll = appData.sesiList.filter(s => s.skor !== undefined).map(s => s.skor / s.totalSoal * 100);
+  const rata = skorAll.length ? Math.round(skorAll.reduce((a,b)=>a+b,0)/skorAll.length) : null;
+  const mingguAktif = [...new Set(appData.sesiList.map(s => {
+    const d = new Date(s.tanggal);
+    const y = d.getFullYear();
+    const w = Math.ceil((d - new Date(y,0,1)) / 604800000);
+    return y + '-' + w;
+  }))].length;
+
+  document.getElementById('statTotalHari').textContent = total;
+  document.getElementById('statRataRata').textContent = rata !== null ? rata + '%' : '—';
+  document.getElementById('statMinggu').textContent = mingguAktif;
+
+  // Tema hari ini
+  if (tema) {
+    document.getElementById('temaHariTitle').textContent = tema.emoji + ' ' + tema.nama;
+    document.getElementById('temaHariSub').textContent = 'Klik untuk membaca materi hari ini';
+  } else {
+    document.getElementById('temaHariTitle').textContent = '☀️ Hari Istirahat';
+    document.getElementById('temaHariSub').textContent = 'Minggu — tidak ada materi. Nikmati harimu.';
+    document.getElementById('temaHariCard').onclick = null;
+  }
+
+  // Riwayat singkat (3 terakhir)
+  const container = document.getElementById('riwayatSingkat');
+  const recent = [...appData.sesiList].reverse().slice(0, 3);
+  if (!recent.length) {
+    container.innerHTML = '<div class="empty-state"><p>Belum ada riwayat.<br>Mulai baca materi hari ini.</p></div>';
+    return;
+  }
+  container.innerHTML = recent.map(s => `
+    <div class="riwayat-item">
+      <div class="riwayat-dot">${TEMA[new Date(s.tanggal).getDay()]?.emoji || '📖'}</div>
+      <div class="riwayat-info">
+        <div class="nama">${s.tema}</div>
+        <div class="tanggal">${formatTanggal(s.tanggal)}</div>
+      </div>
+      <div class="riwayat-skor">${s.skor !== undefined ? s.skor + '/' + s.totalSoal : '—'}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════
+// RENDER MATERI
+// ═══════════════════════════════════════════════
+
+async function renderMateri() {
+  const now = new Date();
+  const hari = now.getDay();
+  const tema = TEMA[hari];
+  const tgl = todayStr();
+
+  if (!tema) {
+    document.getElementById('materiContent').innerHTML =
+      '<div class="empty-state"><p>Hari Minggu — tidak ada materi.<br>Istirahat dan nikmati harimu.</p></div>';
+    document.getElementById('btnMulaiKuis').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('materiTag').textContent = tema.nama;
+  document.getElementById('materiTitle').textContent = tema.emoji + ' ' + tema.nama;
+  document.getElementById('materiDate').textContent = formatTanggal(tgl);
+
+  // Cek cache dulu
+  if (appData.materiCache[tgl]) {
+    tampilkanMateri(appData.materiCache[tgl]);
+    return;
+  }
+
+  // Fetch dari Apps Script
+  if (!appData.scriptUrl) {
+    document.getElementById('materiContent').innerHTML =
+      '<div class="empty-state"><p>URL Apps Script belum diset.<br>Masuk ke Pengaturan dan isi URL-nya.</p></div>';
+    document.getElementById('btnMulaiKuis').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('materiContent').innerHTML =
+    '<div class="empty-state"><div class="spinner" style="margin:0 auto 16px"></div><p>Memuat materi...</p></div>';
+
+  try {
+    const res = await fetch(appData.scriptUrl + '?action=getMateri&tgl=' + tgl);
+    const json = await res.json();
+    if (json.status === 'ok') {
+      appData.materiCache[tgl] = json.data;
+      saveData(appData);
+      tampilkanMateri(json.data);
+    } else {
+      document.getElementById('materiContent').innerHTML =
+        '<div class="empty-state"><p>Materi belum tersedia.<br>' + (json.pesan || 'Coba lagi nanti.') + '</p></div>';
+      document.getElementById('btnMulaiKuis').style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('materiContent').innerHTML =
+      '<div class="empty-state"><p>Gagal memuat materi.<br>Periksa koneksi internetmu.</p></div>';
+    document.getElementById('btnMulaiKuis').style.display = 'none';
+  }
+}
+
+function tampilkanMateri(data) {
+  materiAktif = data;
+  const sections = data.materi ? data.materi.split(/\n(?=\d\.|\#\#)/) : [];
+
+  let html = '';
+  if (data.materi) {
+    html += '<div class="materi-section">';
+    html += '<div class="materi-section-title">Materi Hari Ini</div>';
+    html += '<div class="materi-body">' +
+      data.materi.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                 .replace(/\n\n/g, '</p><p>')
+                 .replace(/\n/g, '<br>');
+    html += '</div></div>';
+  }
+
+  if (data.hukum) {
+    html += '<div class="hukum-card">';
+    html += '<div class="hukum-label">⚖️ Sisipan Hukum</div>';
+    html += '<div class="materi-body">' +
+      data.hukum.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+    html += '</div></div>';
+  }
+
+  document.getElementById('materiContent').innerHTML = html || '<div class="empty-state"><p>Materi kosong.</p></div>';
+  document.getElementById('btnMulaiKuis').style.display = data.soal ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════
+// KUIS
+// ═══════════════════════════════════════════════
+
+function initKuis(soalData) {
+  let parsed;
+  try {
+    parsed = typeof soalData === 'string' ? JSON.parse(soalData.replace(/```json|```/g,'').trim()) : soalData;
+  } catch(e) {
+    showToast('Soal tidak valid');
+    return;
+  }
+
+  kuisState = {
+    soalList: [...parsed.soal_pg, { nomor: 11, pertanyaan: parsed.soal_reflektif, tipe: 'reflektif' }],
+    current: 0,
+    jawaban: [],
+    reflektif: ''
+  };
+  renderSoal();
+}
+
+function renderSoal() {
+  const s = kuisState.soalList[kuisState.current];
+  const total = kuisState.soalList.length;
+  const pct = (kuisState.current / total) * 100;
+
+  document.getElementById('kuisProgressBar').style.width = pct + '%';
+  document.getElementById('kuisNomor').textContent = 'Soal ' + (kuisState.current + 1) + ' dari ' + total;
+  document.getElementById('kuisPertanyaan').textContent = s.pertanyaan;
+  document.getElementById('kuisSubHeader').textContent = materiAktif?.tema || '—';
+
+  const container = document.getElementById('kuisPilihanContainer');
+  document.getElementById('btnLanjutKuis').style.display = 'none';
+
+  if (s.tipe === 'reflektif') {
+    container.innerHTML = `
+      <textarea class="reflektif-area" id="reflektifInput"
+        placeholder="Tuliskan refleksimu di sini..."
+        oninput="kuisState.reflektif = this.value; document.getElementById('btnLanjutKuis').style.display = this.value.trim() ? 'block' : 'none'"></textarea>
+    `;
+    document.getElementById('btnLanjutKuis').textContent = 'Selesai';
+  } else {
+    const pilihan = ['A','B','C','D'];
+    container.innerHTML = pilihan.map(p => `
+      <button class="kuis-pilihan" onclick="pilihJawaban('${p}', this)">
+        <span style="color:var(--teal);font-weight:500;margin-right:8px">${p}.</span>${s.pilihan[p]}
+      </button>
+    `).join('');
+    document.getElementById('btnLanjutKuis').textContent = 'Lanjut';
+  }
+}
+
+function pilihJawaban(pilihan, el) {
+  if (document.getElementById('btnLanjutKuis').style.display === 'block') return;
+  const s = kuisState.soalList[kuisState.current];
+
+  document.querySelectorAll('.kuis-pilihan').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+
+  setTimeout(() => {
+    document.querySelectorAll('.kuis-pilihan').forEach(b => {
+      const p = b.querySelector('span').textContent.replace('.','');
+      if (p === s.jawaban_benar) b.classList.add('benar');
+      else if (p === pilihan && pilihan !== s.jawaban_benar) b.classList.add('salah');
+    });
+    kuisState.jawaban.push({ soal: s.nomor, pilihan, benar: pilihan === s.jawaban_benar });
+    document.getElementById('btnLanjutKuis').style.display = 'block';
+  }, 300);
+}
+
+function lanjutKuis() {
+  if (kuisState.current === kuisState.soalList.length - 1) {
+    selesaiKuis();
+    return;
+  }
+  kuisState.current++;
+  renderSoal();
+  window.scrollTo(0, 0);
+}
+
+function selesaiKuis() {
+  const skor = kuisState.jawaban.filter(j => j.benar).length;
+  const total = kuisState.soalList.length - 1; // exclude reflektif
+  const pct = Math.round(skor / total * 100);
+
+  // Simpan sesi
+  const sesi = {
+    tanggal: todayStr(),
+    tema: materiAktif?.tema || '—',
+    skor,
+    totalSoal: total,
+    reflektif: kuisState.reflektif,
+    jawaban: kuisState.jawaban
+  };
+
+  if (!appData.hariPertama) appData.hariPertama = todayStr();
+  appData.sesiList.push(sesi);
+  saveData(appData);
+
+  // Render hasil
+  document.getElementById('hasilSkor').textContent = skor;
+  document.getElementById('hasilDari').textContent = 'dari ' + total + ' soal (' + pct + '%)';
+  document.getElementById('hasilReflektif').textContent = kuisState.reflektif || '(tidak diisi)';
+
+  let pesan;
+  if (pct >= 80) pesan = 'Solid. Kamu memahami materi hari ini dengan baik.';
+  else if (pct >= 60) pesan = 'Cukup baik. Ada beberapa bagian yang bisa diperdalam.';
+  else pesan = 'Hari ini lebih banyak yang perlu diulang. Tidak apa — itu bagian dari prosesnya.';
+  document.getElementById('hasilPesan').textContent = pesan;
+
+  showScreen('hasil');
+}
+
+// ═══════════════════════════════════════════════
+// RENDER PROGRES
+// ═══════════════════════════════════════════════
+
+function renderProgres() {
+  const now = new Date();
+  const streak = hitungStreak();
+  document.getElementById('progresSubHeader').textContent =
+    streak + ' hari streak · ' + appData.sesiList.length + ' sesi total';
+
+  // Minggu ini
+  const hariRow = document.getElementById('hariRow');
+  hariRow.innerHTML = '';
+  for (let i = 1; i <= 6; i++) {
+    const d = new Date();
+    const diff = (i - now.getDay() + 7) % 7;
+    d.setDate(d.getDate() - (7 - diff) % 7);
+    const dStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const done = appData.sesiList.some(s => s.tanggal === dStr);
+    const isToday = d.getDay() === now.getDay();
+    const tema = TEMA[i];
+
+    const item = document.createElement('div');
+    item.className = 'hari-item';
+    item.innerHTML = `
+      <div class="hari-nama">${HARI_NAMA[i]}</div>
+      <div class="hari-lingkaran ${isToday ? 'aktif' : done ? 'selesai' : ''}">${tema?.emoji || '—'}</div>
+    `;
+    hariRow.appendChild(item);
+  }
+
+  // Skor per tema
+  const skorContainer = document.getElementById('skorPerTema');
+  const temaKeys = [1,2,3,4,5,6];
+  let skorHtml = '<div class="skor-chart">';
+  temaKeys.forEach(k => {
+    const t = TEMA[k];
+    const sesiTema = appData.sesiList.filter(s => s.tema === t.nama);
+    if (!sesiTema.length) return;
+    const avg = Math.round(sesiTema.reduce((a,b) => a + b.skor/b.totalSoal*100, 0) / sesiTema.length);
+    skorHtml += `
+      <div class="skor-bar-row">
+        <div class="skor-bar-label">${t.emoji} ${t.nama.split(' ')[0]}</div>
+        <div class="skor-bar-track"><div class="skor-bar-fill" style="width:${avg}%"></div></div>
+        <div class="skor-bar-val">${avg}%</div>
+      </div>
+    `;
+  });
+  skorHtml += '</div>';
+  skorContainer.innerHTML = skorHtml || '<div class="empty-state"><p>Belum ada data skor.</p></div>';
+
+  // Semua riwayat
+  const riwayat = document.getElementById('riwayatLengkap');
+  if (!appData.sesiList.length) {
+    riwayat.innerHTML = '<div class="empty-state"><p>Belum ada sesi yang selesai.</p></div>';
+    return;
+  }
+  riwayat.innerHTML = [...appData.sesiList].reverse().map(s => `
+    <div class="riwayat-item">
+      <div class="riwayat-dot">${TEMA[new Date(s.tanggal).getDay()]?.emoji || '📖'}</div>
+      <div class="riwayat-info">
+        <div class="nama">${s.tema}</div>
+        <div class="tanggal">${formatTanggal(s.tanggal)}</div>
+      </div>
+      <div class="riwayat-skor">${s.skor}/${s.totalSoal}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════
+// SETTING
+// ═══════════════════════════════════════════════
+
+function renderSetting() {
+  document.getElementById('settingNama').value = appData.nama || '';
+  document.getElementById('settingUrl').value = appData.scriptUrl || '';
+  document.getElementById('infoHariPertama').textContent =
+    appData.hariPertama ? formatTanggal(appData.hariPertama) : '—';
+  document.getElementById('infoTotalSesi').textContent = appData.sesiList.length;
+}
+
+function simpanSetting() {
+  appData.nama = document.getElementById('settingNama').value;
+  appData.scriptUrl = document.getElementById('settingUrl').value;
+  saveData(appData);
+}
+
+function resetData() {
+  if (confirm('Semua data akan dihapus. Yakin?')) {
+    localStorage.removeItem(STORAGE_KEY);
+    appData = defaultData();
+    showToast('Data berhasil direset');
+    showScreen('dashboard');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    renderDashboard();
+  }, 1200);
+});
+</script>
+</body>
+</html>
