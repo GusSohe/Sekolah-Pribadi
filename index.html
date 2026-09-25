@@ -546,6 +546,82 @@
   }
   .empty-state svg { opacity: 0.3; margin-bottom: 16px; }
   .empty-state p { font-size: 0.88rem; line-height: 1.6; }
+
+  /* ── MATERI NAVIGASI TANGGAL ── */
+  .materi-nav {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .materi-nav-btn {
+    background: var(--bg-card); border: 1px solid var(--text-faint);
+    color: var(--text-muted); border-radius: var(--radius-sm);
+    width: 32px; height: 32px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; flex-shrink: 0;
+    font-size: 1rem; transition: border-color 0.15s;
+  }
+  .materi-nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .materi-nav-btn:not(:disabled):active { border-color: var(--teal); }
+  .materi-nav-tag {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+  }
+  .btn-hari-ini {
+    font-size: 0.7rem; color: var(--teal); background: none; border: none;
+    cursor: pointer; white-space: nowrap; padding: 4px 8px;
+    border: 1px solid var(--teal-dim); border-radius: 20px;
+  }
+
+  /* ── ERROR STATE (retry) ── */
+  .error-state {
+    text-align: center; padding: 40px 24px;
+  }
+  .error-state .error-icon { font-size: 2rem; margin-bottom: 12px; }
+  .error-state .error-msg { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px; }
+  .btn-retry {
+    background: var(--bg-card); border: 1px solid var(--teal-dim);
+    color: var(--teal); border-radius: var(--radius); padding: 10px 24px;
+    font-size: 0.85rem; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── REVIEW JAWABAN (post-kuis) ── */
+  .review-item {
+    padding: 14px 0; border-bottom: 1px solid var(--text-faint);
+  }
+  .review-item:last-child { border-bottom: none; }
+  .review-pertanyaan {
+    font-size: 0.82rem; color: var(--text-main); margin-bottom: 8px; line-height: 1.5;
+  }
+  .review-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 500;
+  }
+  .review-badge.benar { background: rgba(78,205,196,0.12); color: var(--teal); }
+  .review-badge.salah { background: rgba(224,85,85,0.10); color: #e05555; }
+  .review-jawaban-teks {
+    font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;
+  }
+
+  /* ── LAPORAN MINGGUAN ── */
+  .laporan-body {
+    font-size: 0.85rem; line-height: 1.7; color: var(--text-main);
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .laporan-loading { font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 20px; }
+
+  /* ── TOGGLE SWITCH ── */
+  .toggle-switch {
+    position: relative; width: 44px; height: 24px; flex-shrink: 0;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--text-faint);
+    border-radius: 24px; cursor: pointer; transition: background 0.2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    background: white; border-radius: 50%;
+    left: 3px; top: 3px; transition: transform 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: var(--teal); }
+  .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 </style>
 </head>
 <body>
@@ -614,7 +690,14 @@
 <!-- ═══════════════════════════════════════ -->
 <div class="screen" id="screen-materi">
   <div class="materi-header">
-    <div class="materi-tag" id="materiTag">—</div>
+    <div class="materi-nav">
+      <button class="materi-nav-btn" id="btnPrevMateri" onclick="navigasiMateri(-1)" title="Hari sebelumnya">‹</button>
+      <div class="materi-nav-tag">
+        <div class="materi-tag" id="materiTag">—</div>
+        <button class="btn-hari-ini" id="btnHariIni" onclick="navigasiKeHariIni()" style="display:none">Hari ini</button>
+      </div>
+      <button class="materi-nav-btn" id="btnNextMateri" onclick="navigasiMateri(1)" title="Hari berikutnya">›</button>
+    </div>
     <div class="materi-title" id="materiTitle">—</div>
     <div class="materi-date" id="materiDate">—</div>
   </div>
@@ -662,6 +745,10 @@
     <div class="materi-section-title">Jawaban reflektifmu</div>
     <div style="font-size:0.85rem;color:var(--text-main);line-height:1.7;" id="hasilReflektif">—</div>
   </div>
+  <div class="card" id="reviewCard" style="display:none">
+    <div class="materi-section-title">Review Jawaban</div>
+    <div id="reviewJawaban"></div>
+  </div>
   <div style="padding: 0 16px;">
     <button class="btn-primary" onclick="showScreen('dashboard')">Kembali ke Beranda</button>
   </div>
@@ -685,6 +772,12 @@
   <!-- Skor per tema -->
   <div class="section-title">Rata-rata skor per tema</div>
   <div class="card" id="skorPerTema"></div>
+
+  <!-- Laporan mingguan -->
+  <div class="section-title">Laporan Mingguan</div>
+  <div class="card" id="laporanCard">
+    <button class="btn-secondary" onclick="loadLaporan()" style="margin-top:0" id="btnMuatLaporan">Muat Laporan Terbaru</button>
+  </div>
 
   <!-- Semua riwayat -->
   <div class="section-title">Semua sesi</div>
@@ -723,8 +816,15 @@
       <div class="setting-value" id="infoTotalSesi">0</div>
     </div>
     <div class="setting-item">
+      <div class="setting-label">Notifikasi jam 20:00</div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="notifToggle" onchange="toggleNotifikasi(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="setting-item">
       <div class="setting-label">Versi</div>
-      <div class="setting-value">1.0.0</div>
+      <div class="setting-value">1.1.0</div>
     </div>
   </div>
 
@@ -774,17 +874,19 @@ function saveData(data) {
 
 function defaultData() {
   return {
-    nama: '',
-    scriptUrl: '',
+    nama       : '',
+    scriptUrl  : '',
     hariPertama: null,
-    sesiList: [],   // [{tanggal, tema, skor, totalSoal, reflektif, materi, hukum}]
-    materiCache: {} // {YYYY-MM-DD: {tema, materi, hukum, soal}}
+    notifAktif : false,
+    sesiList   : [],   // [{tanggal, tema, skor, totalSoal, reflektif, jawaban}]
+    materiCache: {}    // {YYYY-MM-DD: {tema, materi, hukum, soal}}
   };
 }
 
 let appData = loadData();
 let kuisState = { soalList: [], current: 0, jawaban: [], reflektif: '' };
 let materiAktif = null;
+let materiTgl = todayStr();
 
 // ═══════════════════════════════════════════════
 // NAVIGASI
@@ -803,8 +905,26 @@ function showScreen(name) {
 }
 
 function goToMateri() {
-  renderMateri();
+  materiTgl = todayStr();
+  renderMateri(materiTgl);
   showScreen('materi');
+}
+
+function navigasiMateri(delta) {
+  const d = new Date(materiTgl + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  // Skip Minggu
+  if (d.getDay() === 0) d.setDate(d.getDate() + delta);
+  const baru = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  // Jangan ke masa depan
+  if (baru > todayStr()) return;
+  materiTgl = baru;
+  renderMateri(materiTgl);
+}
+
+function navigasiKeHariIni() {
+  materiTgl = todayStr();
+  renderMateri(materiTgl);
 }
 
 function goToKuis() {
@@ -957,13 +1077,25 @@ function renderDashboard() {
 // RENDER MATERI
 // ═══════════════════════════════════════════════
 
-async function renderMateri() {
-  const now = new Date();
-  const hari = now.getDay();
+async function renderMateri(tgl) {
+  if (!tgl) tgl = todayStr();
+  materiTgl = tgl;
+
+  const d    = new Date(tgl + 'T12:00:00');
+  const hari = d.getDay();
   const tema = TEMA[hari];
-  const tgl = todayStr();
+  const isHariIni = (tgl === todayStr());
+
+  // Update tombol navigasi
+  const btnNext = document.getElementById('btnNextMateri');
+  const btnHariIni = document.getElementById('btnHariIni');
+  btnNext.disabled = isHariIni;
+  btnHariIni.style.display = isHariIni ? 'none' : 'inline-block';
 
   if (!tema) {
+    document.getElementById('materiTag').textContent = 'Istirahat';
+    document.getElementById('materiTitle').textContent = '☀️ Hari Istirahat';
+    document.getElementById('materiDate').textContent = formatTanggal(tgl);
     document.getElementById('materiContent').innerHTML =
       '<div class="empty-state"><p>Hari Minggu — tidak ada materi.<br>Istirahat dan nikmati harimu.</p></div>';
     document.getElementById('btnMulaiKuis').style.display = 'none';
@@ -972,7 +1104,7 @@ async function renderMateri() {
 
   document.getElementById('materiTag').textContent = tema.nama;
   document.getElementById('materiTitle').textContent = tema.emoji + ' ' + tema.nama;
-  document.getElementById('materiDate').textContent = formatTanggal(tgl);
+  document.getElementById('materiDate').textContent = formatTanggal(tgl) + (isHariIni ? ' · Hari ini' : '');
 
   // Cek cache dulu
   if (appData.materiCache[tgl]) {
@@ -980,10 +1112,12 @@ async function renderMateri() {
     return;
   }
 
-  // Fetch dari Apps Script
   if (!appData.scriptUrl) {
-    document.getElementById('materiContent').innerHTML =
-      '<div class="empty-state"><p>URL Apps Script belum diset.<br>Masuk ke Pengaturan dan isi URL-nya.</p></div>';
+    document.getElementById('materiContent').innerHTML = `
+      <div class="error-state">
+        <div class="error-icon">⚙️</div>
+        <div class="error-msg">URL Apps Script belum diset.<br>Masuk ke Pengaturan dan isi URL-nya.</div>
+      </div>`;
     document.getElementById('btnMulaiKuis').style.display = 'none';
     return;
   }
@@ -991,23 +1125,45 @@ async function renderMateri() {
   document.getElementById('materiContent').innerHTML =
     '<div class="empty-state"><div class="spinner" style="margin:0 auto 16px"></div><p>Memuat materi...</p></div>';
 
+  const tglParam = tgl;
   try {
-    const res = await fetch(appData.scriptUrl + '?action=getMateri&tgl=' + tgl);
+    if (!navigator.onLine) throw new Error('offline');
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 30000);
+    const res  = await fetch(appData.scriptUrl + '?action=getMateri&tgl=' + tglParam, { signal: controller.signal });
+    clearTimeout(tid);
+
+    if (!res.ok) throw new Error('http_' + res.status);
     const json = await res.json();
+
     if (json.status === 'ok') {
-      appData.materiCache[tgl] = json.data;
+      appData.materiCache[tglParam] = json.data;
       saveData(appData);
       tampilkanMateri(json.data);
-    } else {
+    } else if (json.status === 'libur') {
       document.getElementById('materiContent').innerHTML =
-        '<div class="empty-state"><p>Materi belum tersedia.<br>' + (json.pesan || 'Coba lagi nanti.') + '</p></div>';
+        '<div class="empty-state"><p>Hari Minggu — tidak ada materi.</p></div>';
       document.getElementById('btnMulaiKuis').style.display = 'none';
+    } else {
+      tampilkanError('Materi belum tersedia.', json.pesan || 'Coba lagi nanti.', tglParam);
     }
   } catch(e) {
-    document.getElementById('materiContent').innerHTML =
-      '<div class="empty-state"><p>Gagal memuat materi.<br>Periksa koneksi internetmu.</p></div>';
-    document.getElementById('btnMulaiKuis').style.display = 'none';
+    let msg = 'Gagal memuat materi.';
+    if (e.message === 'offline' || !navigator.onLine) msg = 'Tidak ada koneksi internet.';
+    else if (e.name === 'AbortError') msg = 'Koneksi terlalu lambat (timeout 30 detik).';
+    else if (e.message.startsWith('http_')) msg = 'Layanan tidak merespons (kode ' + e.message.replace('http_','') + ').';
+    tampilkanError(msg, 'Periksa koneksi atau coba lagi.', tglParam);
   }
+}
+
+function tampilkanError(judul, detail, tgl) {
+  document.getElementById('materiContent').innerHTML = `
+    <div class="error-state">
+      <div class="error-icon">⚠️</div>
+      <div class="error-msg"><strong>${judul}</strong><br>${detail}</div>
+      <button class="btn-retry" onclick="renderMateri('${tgl}')">Coba lagi</button>
+    </div>`;
+  document.getElementById('btnMulaiKuis').style.display = 'none';
 }
 
 function renderMarkdown(text) {
@@ -1172,25 +1328,29 @@ function lanjutKuis() {
 }
 
 function selesaiKuis() {
-  const skor = kuisState.jawaban.filter(j => j.benar).length;
+  const skor  = kuisState.jawaban.filter(j => j.benar).length;
   const total = kuisState.soalList.length - 1; // exclude reflektif
-  const pct = Math.round(skor / total * 100);
+  const pct   = Math.round(skor / total * 100);
 
-  // Simpan sesi
   const sesi = {
-    tanggal: todayStr(),
-    tema: materiAktif?.tema || '—',
+    tanggal  : materiTgl,
+    tema     : materiAktif?.tema || '—',
     skor,
     totalSoal: total,
     reflektif: kuisState.reflektif,
-    jawaban: kuisState.jawaban
+    jawaban  : kuisState.jawaban
   };
 
   if (!appData.hariPertama) appData.hariPertama = todayStr();
+  // Hindari duplikat sesi untuk tanggal yang sama
+  appData.sesiList = appData.sesiList.filter(s => s.tanggal !== materiTgl);
   appData.sesiList.push(sesi);
   saveData(appData);
 
-  // Render hasil
+  // Kirim ke backend (fire-and-forget)
+  submitHasilKeServer(sesi);
+
+  // Render skor
   document.getElementById('hasilSkor').textContent = skor;
   document.getElementById('hasilDari').textContent = 'dari ' + total + ' soal (' + pct + '%)';
   document.getElementById('hasilReflektif').textContent = kuisState.reflektif || '(tidak diisi)';
@@ -1201,7 +1361,45 @@ function selesaiKuis() {
   else pesan = 'Hari ini lebih banyak yang perlu diulang. Tidak apa — itu bagian dari prosesnya.';
   document.getElementById('hasilPesan').textContent = pesan;
 
+  // Review jawaban salah
+  const salah = kuisState.jawaban.filter(j => !j.benar);
+  const reviewCard = document.getElementById('reviewCard');
+  if (salah.length > 0) {
+    const soalMap = {};
+    kuisState.soalList.forEach(s => { soalMap[s.nomor] = s; });
+    document.getElementById('reviewJawaban').innerHTML = salah.map(j => {
+      const s = soalMap[j.soal];
+      if (!s) return '';
+      const pilihanBenar = s.pilihan ? s.pilihan[s.jawaban_benar] : '—';
+      const pilihanKamu  = s.pilihan ? s.pilihan[j.pilihan] : j.pilihan;
+      return `
+        <div class="review-item">
+          <div class="review-pertanyaan">${s.nomor}. ${s.pertanyaan}</div>
+          <div>
+            <span class="review-badge salah">Jawabanmu: ${j.pilihan}. ${pilihanKamu}</span>
+          </div>
+          <div class="review-jawaban-teks">✓ Benar: ${s.jawaban_benar}. ${pilihanBenar}</div>
+        </div>`;
+    }).join('');
+    reviewCard.style.display = 'block';
+  } else {
+    reviewCard.style.display = 'none';
+  }
+
   showScreen('hasil');
+}
+
+async function submitHasilKeServer(sesi) {
+  if (!appData.scriptUrl) return;
+  try {
+    await fetch(appData.scriptUrl +
+      '?action=submitHasil' +
+      '&tgl='      + encodeURIComponent(sesi.tanggal) +
+      '&tema='     + encodeURIComponent(sesi.tema) +
+      '&skor='     + sesi.skor +
+      '&total='    + sesi.totalSoal +
+      '&reflektif='+ encodeURIComponent(sesi.reflektif || ''));
+  } catch(e) { /* silent — data tetap di localStorage */ }
 }
 
 // ═══════════════════════════════════════════════
@@ -1283,12 +1481,98 @@ function renderSetting() {
   document.getElementById('infoHariPertama').textContent =
     appData.hariPertama ? formatTanggal(appData.hariPertama) : '—';
   document.getElementById('infoTotalSesi').textContent = appData.sesiList.length;
+  document.getElementById('notifToggle').checked = appData.notifAktif || false;
 }
 
 function simpanSetting() {
   appData.nama = document.getElementById('settingNama').value;
   appData.scriptUrl = document.getElementById('settingUrl').value;
   saveData(appData);
+}
+
+// ═══════════════════════════════════════════════
+// LAPORAN MINGGUAN
+// ═══════════════════════════════════════════════
+
+async function loadLaporan() {
+  if (!appData.scriptUrl) {
+    showToast('URL Apps Script belum diset');
+    return;
+  }
+  const card = document.getElementById('laporanCard');
+  card.innerHTML = '<div class="laporan-loading"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px"></div>Memuat laporan...</div>';
+  try {
+    const res  = await fetch(appData.scriptUrl + '?action=getLaporan');
+    const json = await res.json();
+    if (json.status === 'ok' && json.isi) {
+      card.innerHTML = `
+        <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.04em;text-transform:uppercase">${json.judul || 'Laporan Terbaru'}</div>
+        <div class="laporan-body">${json.isi}</div>
+        <button class="btn-secondary" onclick="loadLaporan()" style="margin-top:12px">Muat Ulang</button>`;
+    } else {
+      card.innerHTML = '<div class="laporan-loading">Laporan belum tersedia.<br><small style="color:var(--text-faint)">' + (json.pesan || '') + '</small></div>' +
+        '<button class="btn-secondary" onclick="loadLaporan()" style="margin-top:8px">Coba lagi</button>';
+    }
+  } catch(e) {
+    card.innerHTML = '<div class="laporan-loading">Gagal memuat laporan.<br>' + (!navigator.onLine ? 'Tidak ada koneksi.' : 'Coba lagi.') + '</div>' +
+      '<button class="btn-secondary" onclick="loadLaporan()" style="margin-top:8px">Coba lagi</button>';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// NOTIFIKASI HARIAN
+// ═══════════════════════════════════════════════
+
+async function toggleNotifikasi(aktif) {
+  if (aktif) {
+    if (!('Notification' in window)) {
+      showToast('Browser ini tidak mendukung notifikasi');
+      document.getElementById('notifToggle').checked = false;
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      showToast('Izin notifikasi ditolak');
+      document.getElementById('notifToggle').checked = false;
+      return;
+    }
+    appData.notifAktif = true;
+    saveData(appData);
+    showToast('Notifikasi aktif — kamu akan diingatkan jam 20:00');
+    jadwalkanNotifikasi();
+  } else {
+    appData.notifAktif = false;
+    saveData(appData);
+    showToast('Notifikasi dimatikan');
+  }
+}
+
+function jadwalkanNotifikasi() {
+  if (!appData.notifAktif) return;
+  if (Notification.permission !== 'granted') return;
+
+  const sudahSelesai = appData.sesiList.some(s => s.tanggal === todayStr());
+  if (sudahSelesai) return;
+
+  const now     = new Date();
+  const jam20   = new Date();
+  jam20.setHours(20, 0, 0, 0);
+
+  if (now >= jam20) return; // sudah lewat jam 20
+
+  const delay = jam20 - now;
+  setTimeout(() => {
+    const masihBelum = !appData.sesiList.some(s => s.tanggal === todayStr());
+    if (masihBelum && appData.notifAktif) {
+      try {
+        new Notification('Sekolah Pribadi', {
+          body: 'Materi hari ini belum kamu baca. Luangkan 10 menit sekarang.',
+          icon: 'icon-192.png',
+          badge: 'icon-192.png'
+        });
+      } catch(e) {}
+    }
+  }, delay);
 }
 
 function resetData() {
@@ -1308,6 +1592,10 @@ window.addEventListener('load', () => {
   setTimeout(() => {
     document.getElementById('loadingOverlay').classList.add('hidden');
     renderDashboard();
+    // Jadwalkan notifikasi jika aktif
+    if (appData.notifAktif && 'Notification' in window && Notification.permission === 'granted') {
+      jadwalkanNotifikasi();
+    }
   }, 1200);
 });
 </script>
