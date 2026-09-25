@@ -38,8 +38,15 @@
   }
 
   /* ── LAYAR (halaman) ── */
-  .screen { display: none; min-height: 100vh; padding-bottom: 80px; }
+  .screen {
+    display: none; min-height: 100vh; padding-bottom: 80px;
+    opacity: 0; transform: translateX(24px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
   .screen.active { display: block; }
+  .screen.visible { opacity: 1; transform: translateX(0); }
+  .screen.exit-left { opacity: 0; transform: translateX(-24px); }
+  .screen.exit-right { opacity: 0; transform: translateX(24px); }
 
   /* ── HEADER ── */
   .app-header {
@@ -96,7 +103,10 @@
     padding: 24px;
     position: relative;
     overflow: hidden;
+    animation: fadeUp 0.4s ease both;
   }
+  .stats-row { animation: fadeUp 0.4s 0.1s ease both; }
+  .tema-hari  { animation: fadeUp 0.4s 0.18s ease both; }
   .dashboard-hero::before {
     content: '';
     position: absolute; top: -40px; right: -40px;
@@ -363,9 +373,35 @@
     font-family: 'DM Sans', sans-serif;
   }
   .kuis-pilihan:active { background: var(--bg-surface); }
-  .kuis-pilihan.selected { border-color: var(--teal); background: rgba(78,205,196,0.08); }
-  .kuis-pilihan.benar { border-color: var(--teal); background: rgba(78,205,196,0.12); }
-  .kuis-pilihan.salah { border-color: #e05555; background: rgba(224,85,85,0.08); }
+  .kuis-pilihan.selected {
+    border-color: var(--teal); background: rgba(78,205,196,0.08);
+    animation: pulsePilihan 0.25s ease;
+  }
+  .kuis-pilihan.benar {
+    border-color: var(--teal); background: rgba(78,205,196,0.12);
+    animation: popBenar 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .kuis-pilihan.salah {
+    border-color: #e05555; background: rgba(224,85,85,0.08);
+    animation: shakeSalah 0.35s ease;
+  }
+  @keyframes pulsePilihan {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(0.98); }
+    100% { transform: scale(1); }
+  }
+  @keyframes popBenar {
+    0%   { transform: scale(1); }
+    60%  { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shakeSalah {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-5px); }
+    40%     { transform: translateX(5px); }
+    60%     { transform: translateX(-3px); }
+    80%     { transform: translateX(3px); }
+  }
 
   .reflektif-area {
     margin: 0 16px;
@@ -396,6 +432,15 @@
     font-size: 5rem;
     color: var(--teal);
     line-height: 1;
+    animation: skorMuncul 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes skorMuncul {
+    0%   { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1);   opacity: 1; }
+  }
+  @keyframes fadeUp {
+    0%   { opacity: 0; transform: translateY(12px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
   .hasil-dari { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
   .hasil-pesan {
@@ -892,16 +937,59 @@ let materiTgl = todayStr();
 // NAVIGASI
 // ═══════════════════════════════════════════════
 
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+const NAV_ORDER = ['dashboard','materi','progres','setting'];
+
+function showScreen(name, direction) {
+  const current = document.querySelector('.screen.active');
+
+  // Tentukan arah slide dari posisi di nav
+  if (!direction && current) {
+    const fromIdx = NAV_ORDER.indexOf(current.id.replace('screen-',''));
+    const toIdx   = NAV_ORDER.indexOf(name);
+    direction = toIdx > fromIdx ? 'left' : 'right';
+  }
+
+  const next = document.getElementById('screen-' + name);
+  if (!next || (current && current.id === 'screen-' + name)) return;
+
+  // Setup next (hidden, offset ke arah datang)
+  next.style.transition = 'none';
+  next.classList.add('active');
+  next.classList.remove('visible');
+  if (direction === 'left')  next.style.transform = 'translateX(24px)';
+  else                       next.style.transform = 'translateX(-24px)';
+  next.style.opacity = '0';
+
+  // Trigger reflow
+  void next.offsetWidth;
+  next.style.transition = '';
+
+  // Animasi masuk
+  next.style.transform = '';
+  next.style.opacity   = '';
+  next.classList.add('visible');
+
+  // Animasi keluar dan hapus current
+  if (current) {
+    current.style.transition = 'opacity 0.18s ease, transform 0.18s ease';
+    current.style.opacity    = '0';
+    current.style.transform  = direction === 'left' ? 'translateX(-24px)' : 'translateX(24px)';
+    setTimeout(() => {
+      current.classList.remove('active','visible');
+      current.style.transition = '';
+      current.style.opacity    = '';
+      current.style.transform  = '';
+    }, 200);
+  }
+
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
   const navEl = document.getElementById('nav-' + name);
   if (navEl) navEl.classList.add('active');
+
   window.scrollTo(0, 0);
   if (name === 'dashboard') renderDashboard();
-  if (name === 'progres') renderProgres();
-  if (name === 'setting') renderSetting();
+  if (name === 'progres')   renderProgres();
+  if (name === 'setting')   renderSetting();
 }
 
 function goToMateri() {
@@ -933,7 +1021,7 @@ function goToKuis() {
     return;
   }
   initKuis(materiAktif.soal);
-  showScreen('kuis');
+  showScreen('kuis', 'left');
 }
 
 // ═══════════════════════════════════════════════
@@ -1306,13 +1394,15 @@ function pilihJawaban(pilihan, el) {
   document.querySelectorAll('.kuis-pilihan').forEach(b => b.classList.remove('selected'));
   el.classList.add('selected');
 
+  const benar = pilihan === s.jawaban_benar;
   setTimeout(() => {
     document.querySelectorAll('.kuis-pilihan').forEach(b => {
       const p = b.querySelector('span').textContent.replace('.','');
       if (p === s.jawaban_benar) b.classList.add('benar');
-      else if (p === pilihan && pilihan !== s.jawaban_benar) b.classList.add('salah');
+      else if (p === pilihan && !benar) b.classList.add('salah');
     });
-    kuisState.jawaban.push({ soal: s.nomor, pilihan, benar: pilihan === s.jawaban_benar });
+    haptic(benar ? 'benar' : 'salah');
+    kuisState.jawaban.push({ soal: s.nomor, pilihan, benar });
     document.getElementById('btnLanjutKuis').style.display = 'block';
   }, 300);
 }
@@ -1350,8 +1440,11 @@ function selesaiKuis() {
   // Kirim ke backend (fire-and-forget)
   submitHasilKeServer(sesi);
 
-  // Render skor
-  document.getElementById('hasilSkor').textContent = skor;
+  // Render skor (dengan animasi count-up)
+  showScreen('hasil', 'left');
+  const skorEl = document.getElementById('hasilSkor');
+  skorEl.textContent = '0';
+  setTimeout(() => animasiSkor(skorEl, skor, 700), 200);
   document.getElementById('hasilDari').textContent = 'dari ' + total + ' soal (' + pct + '%)';
   document.getElementById('hasilReflektif').textContent = kuisState.reflektif || '(tidak diisi)';
 
@@ -1385,8 +1478,6 @@ function selesaiKuis() {
   } else {
     reviewCard.style.display = 'none';
   }
-
-  showScreen('hasil');
 }
 
 async function submitHasilKeServer(sesi) {
@@ -1588,11 +1679,84 @@ function resetData() {
 // INIT
 // ═══════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════
+// HAPTIC FEEDBACK
+// ═══════════════════════════════════════════════
+
+function haptic(type) {
+  if (!navigator.vibrate) return;
+  if (type === 'benar')    navigator.vibrate(40);
+  else if (type === 'salah') navigator.vibrate([30, 50, 30]);
+  else if (type === 'tap')   navigator.vibrate(15);
+}
+
+// ═══════════════════════════════════════════════
+// SCORE COUNT-UP ANIMATION
+// ═══════════════════════════════════════════════
+
+function animasiSkor(targetEl, angka, durasi) {
+  let start = null;
+  const from = 0;
+  function step(ts) {
+    if (!start) start = ts;
+    const prog = Math.min((ts - start) / durasi, 1);
+    const ease = 1 - Math.pow(1 - prog, 3); // ease-out cubic
+    targetEl.textContent = Math.round(from + (angka - from) * ease);
+    if (prog < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ═══════════════════════════════════════════════
+// SWIPE NAVIGASI ANTAR TAB
+// ═══════════════════════════════════════════════
+
+(function initSwipe() {
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+
+    // Hanya proses swipe horizontal yang dominan (bukan scroll)
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.8) return;
+
+    const activeScreen = document.querySelector('.screen.active');
+    if (!activeScreen) return;
+    const currentName = activeScreen.id.replace('screen-', '');
+    const navScreens  = NAV_ORDER;
+    const idx = navScreens.indexOf(currentName);
+    if (idx === -1) return; // kuis/hasil tidak ikut swipe nav
+
+    if (dx < 0 && idx < navScreens.length - 1) {
+      haptic('tap');
+      showScreen(navScreens[idx + 1], 'left');
+    } else if (dx > 0 && idx > 0) {
+      haptic('tap');
+      showScreen(navScreens[idx - 1], 'right');
+    }
+  }, { passive: true });
+})();
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+
 window.addEventListener('load', () => {
+  // Tampilkan screen pertama langsung agar animasi bisa jalan
+  const firstScreen = document.getElementById('screen-dashboard');
+  firstScreen.classList.add('active');
+  setTimeout(() => firstScreen.classList.add('visible'), 50);
+
   setTimeout(() => {
     document.getElementById('loadingOverlay').classList.add('hidden');
     renderDashboard();
-    // Jadwalkan notifikasi jika aktif
     if (appData.notifAktif && 'Notification' in window && Notification.permission === 'granted') {
       jadwalkanNotifikasi();
     }
