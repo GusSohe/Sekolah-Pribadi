@@ -1,7 +1,7 @@
 // Service Worker — Sekolah Pribadi
 // Cache-first untuk app shell, network-first untuk API
 
-const CACHE = 'sp-v1.1';
+const CACHE = 'sp-v1.2';
 const SHELL = [
   '/Sekolah-Pribadi/',
   '/Sekolah-Pribadi/index.html',

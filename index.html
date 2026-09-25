@@ -651,6 +651,84 @@
   }
   .laporan-loading { font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 20px; }
 
+  /* ── KALENDER MATERI ── */
+  .materi-cal-top {
+    padding: 52px 0 8px;
+    background: var(--bg-deep);
+  }
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px 12px;
+  }
+  .cal-month-label {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem; color: var(--text-main);
+  }
+  .cal-nav-btn {
+    background: var(--bg-card); border: 1px solid var(--text-faint);
+    color: var(--text-muted); border-radius: var(--radius-sm);
+    width: 32px; height: 32px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; font-size: 1.1rem;
+    transition: border-color 0.15s;
+  }
+  .cal-nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .cal-nav-btn:not(:disabled):active { border-color: var(--teal); }
+  .cal-dow-row {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    padding: 0 16px; margin-bottom: 4px;
+  }
+  .cal-dow {
+    text-align: center; font-size: 0.58rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 0;
+    font-weight: 500;
+  }
+  .cal-dow.minggu { color: var(--text-faint); }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 2px; padding: 0 12px;
+  }
+  .cal-cell {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-start; padding: 3px 0; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cal-cell.empty, .cal-cell.minggu, .cal-cell.future, .cal-cell.before-start { cursor: default; }
+  .cal-num {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.82rem; color: var(--text-muted);
+    transition: background 0.15s;
+  }
+  .cal-cell.future .cal-num, .cal-cell.empty .cal-num,
+  .cal-cell.minggu .cal-num, .cal-cell.before-start .cal-num { color: var(--text-faint); }
+  .cal-cell.today .cal-num { border: 1.5px solid var(--teal); color: var(--teal); }
+  .cal-cell.selected .cal-num { background: var(--teal); color: var(--bg-deep); font-weight: 500; }
+  .cal-cell.selected.today .cal-num { border: none; }
+  .cal-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    margin-top: 2px; background: transparent;
+  }
+  .cal-cell.done .cal-dot { background: var(--teal); }
+  .cal-cell.selected .cal-dot { background: rgba(78,205,196,0.5); }
+  .cal-selected-bar {
+    padding: 10px 16px 8px;
+    font-size: 0.78rem; color: var(--text-muted);
+    border-top: 1px solid var(--text-faint);
+    border-bottom: 1px solid var(--text-faint);
+    background: var(--bg-surface);
+    font-weight: 500;
+  }
+
+  /* ── CHECKLIST HARI INI ── */
+  .hari-checklist { display: flex; gap: 12px; margin-top: 14px; }
+  .hari-check {
+    font-size: 0.72rem; color: rgba(232,230,225,0.35);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .hari-check.done { color: var(--teal); }
+  .hari-check::before { content: '○'; font-size: 0.8rem; }
+  .hari-check.done::before { content: '✓'; }
+
   /* ── TOGGLE SWITCH ── */
   .toggle-switch {
     position: relative; width: 44px; height: 24px; flex-shrink: 0;
@@ -719,6 +797,10 @@
     <div class="title" id="temaHariTitle">—</div>
     <div class="sub" id="temaHariSub">—</div>
     <div class="cta">Baca materi →</div>
+    <div class="hari-checklist" id="hariChecklist">
+      <span class="hari-check" id="checkMateri">Materi</span>
+      <span class="hari-check" id="checkKuis">Kuis</span>
+    </div>
   </div>
 
   <!-- Riwayat singkat -->
@@ -734,25 +816,32 @@
 <!-- LAYAR 2: MATERI                         -->
 <!-- ═══════════════════════════════════════ -->
 <div class="screen" id="screen-materi">
-  <div class="materi-header">
-    <div class="materi-nav">
-      <button class="materi-nav-btn" id="btnPrevMateri" onclick="navigasiMateri(-1)" title="Hari sebelumnya">‹</button>
-      <div class="materi-nav-tag">
-        <div class="materi-tag" id="materiTag">—</div>
-        <button class="btn-hari-ini" id="btnHariIni" onclick="navigasiKeHariIni()" style="display:none">Hari ini</button>
+  <div class="materi-cal-top">
+    <div class="cal-header">
+      <button class="cal-nav-btn" onclick="navigasiKalender(-1)" title="Bulan sebelumnya">‹</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="cal-month-label" id="calMonthLabel">—</span>
+        <button class="btn-hari-ini" id="btnKalHariIni" onclick="navigasiKeHariIni()" style="display:none">Hari ini</button>
       </div>
-      <button class="materi-nav-btn" id="btnNextMateri" onclick="navigasiMateri(1)" title="Hari berikutnya">›</button>
+      <button class="cal-nav-btn" id="btnCalNext" onclick="navigasiKalender(1)" title="Bulan berikutnya">›</button>
     </div>
-    <div class="materi-title" id="materiTitle">—</div>
-    <div class="materi-date" id="materiDate">—</div>
+    <div class="cal-dow-row">
+      <div class="cal-dow minggu">Min</div>
+      <div class="cal-dow">Sen</div>
+      <div class="cal-dow">Sel</div>
+      <div class="cal-dow">Rab</div>
+      <div class="cal-dow">Kam</div>
+      <div class="cal-dow">Jum</div>
+      <div class="cal-dow">Sab</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
   </div>
+  <div class="cal-selected-bar" id="calSelectedLabel">Pilih tanggal untuk membaca materi</div>
   <div class="materi-container" id="materiContent">
-    <div class="empty-state">
-      <p>Materi sedang disiapkan.<br>Cek kembali setelah jam 7 pagi.</p>
-    </div>
+    <div class="empty-state"><p>Pilih tanggal di atas<br>untuk membaca materi.</p></div>
   </div>
-  <div style="padding: 0 16px;">
-    <button class="btn-primary" onclick="goToKuis()" id="btnMulaiKuis">Mulai Kuis</button>
+  <div style="padding: 0 16px 16px;">
+    <button class="btn-primary" onclick="goToKuis()" id="btnMulaiKuis" style="display:none">Mulai Kuis</button>
     <button class="btn-secondary" onclick="showScreen('dashboard')">Kembali</button>
   </div>
 </div>
@@ -821,7 +910,7 @@
   <!-- Laporan mingguan -->
   <div class="section-title">Laporan Mingguan</div>
   <div class="card" id="laporanCard">
-    <button class="btn-secondary" onclick="loadLaporan()" style="margin-top:0" id="btnMuatLaporan">Muat Laporan Terbaru</button>
+    <div class="laporan-loading"><div class="spinner" style="margin:0 auto 12px;width:24px;height:24px"></div>Memuat laporan...</div>
   </div>
 
   <!-- Semua riwayat -->
@@ -869,7 +958,7 @@
     </div>
     <div class="setting-item">
       <div class="setting-label">Versi</div>
-      <div class="setting-value">1.1.0</div>
+      <div class="setting-value">1.2.0</div>
     </div>
   </div>
 
@@ -932,6 +1021,7 @@ let appData = loadData();
 let kuisState = { soalList: [], current: 0, jawaban: [], reflektif: '' };
 let materiAktif = null;
 let materiTgl = todayStr();
+let calendarState = { year: new Date().getFullYear(), month: new Date().getMonth() };
 
 // ═══════════════════════════════════════════════
 // NAVIGASI
@@ -988,13 +1078,16 @@ function showScreen(name, direction) {
 
   window.scrollTo(0, 0);
   if (name === 'dashboard') renderDashboard();
+  if (name === 'materi')  { renderKalenderMateri(); renderMateri(materiTgl); }
   if (name === 'progres')   renderProgres();
   if (name === 'setting')   renderSetting();
 }
 
 function goToMateri() {
   materiTgl = todayStr();
-  renderMateri(materiTgl);
+  const now = new Date();
+  calendarState.year = now.getFullYear();
+  calendarState.month = now.getMonth();
   showScreen('materi');
 }
 
@@ -1012,6 +1105,10 @@ function navigasiMateri(delta) {
 
 function navigasiKeHariIni() {
   materiTgl = todayStr();
+  const now = new Date();
+  calendarState.year = now.getFullYear();
+  calendarState.month = now.getMonth();
+  renderKalenderMateri();
   renderMateri(materiTgl);
 }
 
@@ -1059,11 +1156,11 @@ function greeting() {
   return 'Selamat malam';
 }
 
-function showToast(msg) {
+function showToast(msg, durasi) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(() => t.classList.remove('show'), durasi || 2500);
 }
 
 function hitungStreak() {
@@ -1142,6 +1239,14 @@ function renderDashboard() {
     document.getElementById('temaHariCard').onclick = null;
   }
 
+  // Checklist hari ini
+  const todayKey = todayStr();
+  const materiDibaca = !!appData.materiCache[todayKey];
+  const kuisSelesai = appData.sesiList.some(s => s.tanggal === todayKey);
+  document.getElementById('checkMateri').className = 'hari-check' + (materiDibaca ? ' done' : '');
+  document.getElementById('checkKuis').className = 'hari-check' + (kuisSelesai ? ' done' : '');
+  document.getElementById('hariChecklist').style.display = tema ? 'flex' : 'none';
+
   // Riwayat singkat (3 terakhir)
   const container = document.getElementById('riwayatSingkat');
   const recent = [...appData.sesiList].reverse().slice(0, 3);
@@ -1174,25 +1279,19 @@ async function renderMateri(tgl) {
   const tema = TEMA[hari];
   const isHariIni = (tgl === todayStr());
 
-  // Update tombol navigasi
-  const btnNext = document.getElementById('btnNextMateri');
-  const btnHariIni = document.getElementById('btnHariIni');
-  btnNext.disabled = isHariIni;
-  btnHariIni.style.display = isHariIni ? 'none' : 'inline-block';
-
+  // Update label tanggal terpilih
+  const labelEl = document.getElementById('calSelectedLabel');
   if (!tema) {
-    document.getElementById('materiTag').textContent = 'Istirahat';
-    document.getElementById('materiTitle').textContent = '☀️ Hari Istirahat';
-    document.getElementById('materiDate').textContent = formatTanggal(tgl);
+    if (labelEl) labelEl.textContent = '☀️ ' + formatTanggal(tgl) + ' — Hari Istirahat';
     document.getElementById('materiContent').innerHTML =
       '<div class="empty-state"><p>Hari Minggu — tidak ada materi.<br>Istirahat dan nikmati harimu.</p></div>';
     document.getElementById('btnMulaiKuis').style.display = 'none';
     return;
   }
-
-  document.getElementById('materiTag').textContent = tema.nama;
-  document.getElementById('materiTitle').textContent = tema.emoji + ' ' + tema.nama;
-  document.getElementById('materiDate').textContent = formatTanggal(tgl) + (isHariIni ? ' · Hari ini' : '');
+  if (labelEl) {
+    labelEl.textContent = HARI_NAMA[hari] + ', ' + formatTanggal(tgl) +
+      (isHariIni ? ' · Hari ini' : '') + ' · ' + tema.emoji + ' ' + tema.nama;
+  }
 
   // Cek cache dulu
   if (appData.materiCache[tgl]) {
@@ -1440,6 +1539,18 @@ function selesaiKuis() {
   // Kirim ke backend (fire-and-forget)
   submitHasilKeServer(sesi);
 
+  // Milestone check
+  const totalHariBelajar = [...new Set(appData.sesiList.map(s => s.tanggal))].length;
+  if (skor === total) {
+    setTimeout(() => showToast('💯 Skor sempurna! ' + skor + '/' + total, 3500), 800);
+  } else if (totalHariBelajar === 30) {
+    setTimeout(() => showToast('🏆 30 hari belajar! Pencapaian luar biasa.', 4000), 800);
+  } else if (totalHariBelajar === 14) {
+    setTimeout(() => showToast('🌟 2 minggu konsisten! Terus pertahankan.', 4000), 800);
+  } else if (totalHariBelajar === 7) {
+    setTimeout(() => showToast('🔥 7 hari belajar! Konsistensi membangun segalanya.', 4000), 800);
+  }
+
   // Render skor (dengan animasi count-up)
   showScreen('hasil', 'left');
   const skorEl = document.getElementById('hasilSkor');
@@ -1543,6 +1654,12 @@ function renderProgres() {
   });
   skorHtml += '</div>';
   skorContainer.innerHTML = skorHtml || '<div class="empty-state"><p>Belum ada data skor.</p></div>';
+
+  // Auto-load laporan (hanya jika belum ada konten)
+  const laporanCard = document.getElementById('laporanCard');
+  if (!laporanCard.querySelector('.laporan-body')) {
+    loadLaporan();
+  }
 
   // Semua riwayat
   const riwayat = document.getElementById('riwayatLengkap');
@@ -1678,6 +1795,95 @@ function resetData() {
 // ═══════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════
+// KALENDER MATERI
+// ═══════════════════════════════════════════════
+
+const BULAN_FULL = ['Januari','Februari','Maret','April','Mei','Juni',
+                    'Juli','Agustus','September','Oktober','November','Desember'];
+
+function renderKalenderMateri() {
+  const { year, month } = calendarState;
+  const today = todayStr();
+  const todayDate = new Date();
+  const isCurrentMonth = (year === todayDate.getFullYear() && month === todayDate.getMonth());
+
+  document.getElementById('calMonthLabel').textContent = BULAN_FULL[month] + ' ' + year;
+  document.getElementById('btnKalHariIni').style.display = isCurrentMonth ? 'none' : 'inline-block';
+  const btnNext = document.getElementById('btnCalNext');
+  if (btnNext) btnNext.disabled = isCurrentMonth;
+
+  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const hariPertama = appData.hariPertama;
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  // Sel kosong sebelum hari pertama bulan
+  for (let i = 0; i < firstDow; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell empty';
+    cell.innerHTML = '<div class="cal-num"></div><div class="cal-dot"></div>';
+    grid.appendChild(cell);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = year + '-' + String(month + 1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    const dow = new Date(year, month, d).getDay();
+    const isSunday    = dow === 0;
+    const isFuture    = dateStr > today;
+    const isBeforeStart = hariPertama && dateStr < hariPertama;
+    const isToday     = dateStr === today;
+    const isSelected  = dateStr === materiTgl;
+    const isDone      = appData.sesiList.some(s => s.tanggal === dateStr);
+
+    let cls = 'cal-cell';
+    if (isSunday)        cls += ' minggu';
+    else if (isFuture || isBeforeStart) cls += ' future';
+    else if (isSelected) cls += ' selected';
+    else if (isToday)    cls += ' today';
+    if (isDone && !isSunday) cls += ' done';
+
+    const cell = document.createElement('div');
+    cell.className = cls;
+    if (!isSunday && !isFuture && !isBeforeStart) {
+      cell.onclick = () => pilihTglKalender(dateStr);
+    }
+    cell.innerHTML = `<div class="cal-num">${d}</div><div class="cal-dot"></div>`;
+    grid.appendChild(cell);
+  }
+}
+
+function navigasiKalender(delta) {
+  calendarState.month += delta;
+  if (calendarState.month < 0) {
+    calendarState.month = 11; calendarState.year--;
+  } else if (calendarState.month > 11) {
+    calendarState.month = 0;  calendarState.year++;
+  }
+  // Jangan ke masa depan
+  const now = new Date();
+  if (calendarState.year > now.getFullYear() ||
+      (calendarState.year === now.getFullYear() && calendarState.month > now.getMonth())) {
+    calendarState.year = now.getFullYear();
+    calendarState.month = now.getMonth();
+  }
+  renderKalenderMateri();
+}
+
+function pilihTglKalender(tgl) {
+  materiTgl = tgl;
+  renderKalenderMateri();
+  renderMateri(tgl);
+  haptic('tap');
+  // Scroll ke konten materi
+  setTimeout(() => {
+    const bar = document.querySelector('.cal-selected-bar');
+    if (bar) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
 
 // ═══════════════════════════════════════════════
 // HAPTIC FEEDBACK
