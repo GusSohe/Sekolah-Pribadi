@@ -651,6 +651,73 @@
   }
   .laporan-loading { font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 20px; }
 
+  /* ── AUDIO PLAYER ── */
+  .audio-pill {
+    position: fixed; bottom: 88px; right: 16px; z-index: 90;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
+  }
+  .audio-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--bg-card); border: 1px solid var(--text-faint);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .audio-btn.playing { border-color: var(--teal); background: rgba(78,205,196,0.1); }
+  .audio-btn svg { width: 20px; height: 20px; color: var(--text-muted); }
+  .audio-btn.playing svg { color: var(--teal); }
+
+  .audio-panel {
+    background: var(--bg-card); border: 1px solid var(--text-faint);
+    border-radius: var(--radius); padding: 14px;
+    min-width: 200px; display: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    animation: slideUpPanel 0.2s ease;
+  }
+  .audio-panel.open { display: block; }
+  @keyframes slideUpPanel {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .audio-panel-title {
+    font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.06em;
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .audio-options { display: flex; gap: 6px; margin-bottom: 12px; }
+  .audio-opt {
+    flex: 1; padding: 8px 4px; border-radius: var(--radius-sm);
+    background: var(--bg-surface); border: 1.5px solid transparent;
+    cursor: pointer; text-align: center; font-size: 0.75rem;
+    color: var(--text-muted); transition: border-color 0.15s, color 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .audio-opt .opt-icon { font-size: 1.2rem; display: block; margin-bottom: 3px; }
+  .audio-opt.active { border-color: var(--teal); color: var(--teal); }
+  .audio-vol { display: flex; align-items: center; gap: 8px; }
+  .audio-vol-icon { font-size: 0.9rem; color: var(--text-muted); }
+  .audio-vol input[type=range] {
+    flex: 1; -webkit-appearance: none; height: 3px;
+    background: var(--text-faint); border-radius: 2px; outline: none;
+  }
+  .audio-vol input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--teal); border-radius: 50%; cursor: pointer;
+  }
+
+  /* Equalizer animasi saat playing */
+  .eq-bars { display: flex; gap: 2px; align-items: flex-end; height: 14px; }
+  .eq-bar {
+    width: 3px; background: var(--teal); border-radius: 1px;
+    animation: eqBounce 0.6s ease infinite alternate;
+  }
+  .eq-bar:nth-child(1) { animation-delay: 0s;    animation-duration: 0.5s; }
+  .eq-bar:nth-child(2) { animation-delay: 0.15s; animation-duration: 0.7s; }
+  .eq-bar:nth-child(3) { animation-delay: 0.3s;  animation-duration: 0.4s; }
+  @keyframes eqBounce {
+    from { height: 3px; }
+    to   { height: 12px; }
+  }
+
   /* ── TOGGLE SWITCH ── */
   .toggle-switch {
     position: relative; width: 44px; height: 24px; flex-shrink: 0;
@@ -881,6 +948,35 @@
 <!-- ═══════════════════════════════════════ -->
 <!-- NAVIGASI BAWAH                          -->
 <!-- ═══════════════════════════════════════ -->
+<!-- AUDIO PLAYER -->
+<div class="audio-pill" id="audioPill">
+  <div class="audio-panel" id="audioPanel">
+    <div class="audio-panel-title">Suara Latar</div>
+    <div class="audio-options">
+      <button class="audio-opt" id="opt-rain"   onclick="pilihSuara('rain')"  >
+        <span class="opt-icon">🌧</span>Hujan
+      </button>
+      <button class="audio-opt" id="opt-focus"  onclick="pilihSuara('focus')" >
+        <span class="opt-icon">🎯</span>Fokus
+      </button>
+      <button class="audio-opt" id="opt-forest" onclick="pilihSuara('forest')">
+        <span class="opt-icon">🌲</span>Hutan
+      </button>
+    </div>
+    <div class="audio-vol">
+      <span class="audio-vol-icon">🔈</span>
+      <input type="range" id="audioVolume" min="0" max="100" value="40"
+             oninput="aturVolume(this.value)">
+      <span class="audio-vol-icon">🔊</span>
+    </div>
+  </div>
+  <button class="audio-btn" id="audioBtn" onclick="toggleAudioPanel()" title="Suara Latar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" id="audioBtnIcon">
+      <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+    </svg>
+  </button>
+</div>
+
 <nav class="nav-bar">
   <button class="nav-item active" id="nav-dashboard" onclick="showScreen('dashboard')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
@@ -1680,6 +1776,191 @@ function resetData() {
 // ═══════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════
+// WEB AUDIO ENGINE — generative ambient sounds
+// ═══════════════════════════════════════════════
+
+let audioCtx    = null;
+let audioGain   = null;
+let audioNodes  = [];    // node aktif yang perlu di-stop
+let audioActive = false;
+let audioCurrent = null;
+
+function initAudioCtx() {
+  if (audioCtx) return;
+  audioCtx  = new (window.AudioContext || window.webkitAudioContext)();
+  audioGain = audioCtx.createGain();
+  audioGain.gain.value = 0.4;
+  audioGain.connect(audioCtx.destination);
+}
+
+// Pink noise buffer (3 detik, di-loop)
+function buatPinkNoiseBuffer(ctx) {
+  const rate   = ctx.sampleRate;
+  const buf    = ctx.createBuffer(2, rate * 3, rate);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for (let i = 0; i < d.length; i++) {
+      const w = Math.random() * 2 - 1;
+      b0 = 0.99886*b0 + w*0.0555179;
+      b1 = 0.99332*b1 + w*0.0750759;
+      b2 = 0.96900*b2 + w*0.1538520;
+      b3 = 0.86650*b3 + w*0.3104856;
+      b4 = 0.55000*b4 + w*0.5329522;
+      b5 = -0.7616*b5 - w*0.0168980;
+      d[i] = (b0+b1+b2+b3+b4+b5+b6 + w*0.5362) * 0.11;
+      b6 = w * 0.115926;
+    }
+  }
+  return buf;
+}
+
+function mulaiHujan(ctx, dest) {
+  // Pink noise + lowpass filter → suara hujan
+  const src = ctx.createBufferSource();
+  src.buffer = buatPinkNoiseBuffer(ctx);
+  src.loop = true;
+
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 900; lp.Q.value = 0.6;
+
+  // Modulasi volume lambat untuk efek guyuran
+  const tremolo = ctx.createOscillator();
+  const trGain  = ctx.createGain();
+  tremolo.frequency.value = 0.3; tremolo.type = 'sine';
+  trGain.gain.value = 0.08;
+  tremolo.connect(trGain); trGain.connect(dest.gain || dest);
+
+  src.connect(lp); lp.connect(dest);
+  src.start(); tremolo.start();
+  return [src, lp, tremolo, trGain];
+}
+
+function mulaiFokus(ctx, dest) {
+  // Binaural 40Hz gamma: kiri 200Hz, kanan 240Hz
+  const merger = ctx.createChannelMerger(2);
+  merger.connect(dest);
+
+  const oscL = ctx.createOscillator(); const gL = ctx.createGain();
+  const oscR = ctx.createOscillator(); const gR = ctx.createGain();
+  oscL.frequency.value = 200; oscL.type = 'sine'; gL.gain.value = 0.12;
+  oscR.frequency.value = 240; oscR.type = 'sine'; gR.gain.value = 0.12;
+
+  oscL.connect(gL); gL.connect(merger, 0, 0);
+  oscR.connect(gR); gR.connect(merger, 0, 1);
+
+  // Lapisan pink noise sangat lembut sebagai "carrier" ambient
+  const noise = ctx.createBufferSource();
+  noise.buffer = buatPinkNoiseBuffer(ctx);
+  noise.loop = true;
+  const nGain = ctx.createGain(); nGain.gain.value = 0.04;
+  const nLp   = ctx.createBiquadFilter(); nLp.frequency.value = 400;
+  noise.connect(nLp); nLp.connect(nGain); nGain.connect(dest);
+
+  oscL.start(); oscR.start(); noise.start();
+  return [oscL, oscR, gL, gR, merger, noise, nGain, nLp];
+}
+
+function mulaiHutan(ctx, dest) {
+  // Kombinasi noise + beberapa osilator rendah meniru suara hutan
+  const noise = ctx.createBufferSource();
+  noise.buffer = buatPinkNoiseBuffer(ctx);
+  noise.loop = true;
+  const bp = ctx.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = 600; bp.Q.value = 0.4;
+  noise.connect(bp); bp.connect(dest);
+
+  // Kicau burung sesekali: osilator pendek acak
+  const nodes = [noise, bp];
+  function kicauAcak() {
+    if (!audioActive || audioCurrent !== 'forest') return;
+    const delay = 3000 + Math.random() * 8000;
+    setTimeout(() => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const freq = 1000 + Math.random() * 1500;
+      osc.frequency.value = freq; osc.type = 'sine';
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.05);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+      osc.connect(gain); gain.connect(dest);
+      osc.start(); osc.stop(ctx.currentTime + 0.35);
+      kicauAcak();
+    }, delay);
+  }
+  noise.start();
+  kicauAcak();
+  return nodes;
+}
+
+function stopSuara() {
+  audioNodes.forEach(n => {
+    try { n.stop ? n.stop() : n.disconnect(); } catch(e) {}
+  });
+  audioNodes = [];
+  audioActive  = false;
+  audioCurrent = null;
+  updateAudioUI();
+}
+
+function pilihSuara(jenis) {
+  initAudioCtx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
+  if (audioCurrent === jenis) { stopSuara(); return; }
+  stopSuara();
+
+  audioActive  = true;
+  audioCurrent = jenis;
+
+  if (jenis === 'rain')   audioNodes = mulaiHujan(audioCtx, audioGain);
+  if (jenis === 'focus')  audioNodes = mulaiFokus(audioCtx, audioGain);
+  if (jenis === 'forest') audioNodes = mulaiHutan(audioCtx, audioGain);
+
+  updateAudioUI();
+  haptic('tap');
+}
+
+function aturVolume(val) {
+  if (!audioGain) return;
+  audioGain.gain.linearRampToValueAtTime(val / 100, (audioCtx?.currentTime || 0) + 0.05);
+}
+
+function toggleAudioPanel() {
+  const panel = document.getElementById('audioPanel');
+  panel.classList.toggle('open');
+}
+
+// Tutup panel kalau tap di luar
+document.addEventListener('click', e => {
+  const pill = document.getElementById('audioPill');
+  if (pill && !pill.contains(e.target)) {
+    document.getElementById('audioPanel')?.classList.remove('open');
+  }
+});
+
+function updateAudioUI() {
+  const btn   = document.getElementById('audioBtn');
+  const icon  = document.getElementById('audioBtnIcon');
+  ['rain','focus','forest'].forEach(j => {
+    document.getElementById('opt-' + j)?.classList.toggle('active', audioCurrent === j);
+  });
+  if (audioActive) {
+    btn.classList.add('playing');
+    icon.outerHTML = `<div class="eq-bars" id="audioBtnIcon">
+      <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+    </div>`;
+  } else {
+    btn.classList.remove('playing');
+    if (!document.getElementById('audioBtnIcon')?.classList?.contains?.('eq-bars')) return;
+    document.getElementById('audioBtnIcon').outerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" id="audioBtnIcon">
+        <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+      </svg>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
 // HAPTIC FEEDBACK
 // ═══════════════════════════════════════════════
 
@@ -1749,7 +2030,13 @@ function animasiSkor(targetEl, angka, durasi) {
 // ═══════════════════════════════════════════════
 
 window.addEventListener('load', () => {
-  // Tampilkan screen pertama langsung agar animasi bisa jalan
+  // Registrasi Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/Sekolah-Pribadi/sw.js')
+      .catch(e => console.log('SW error:', e));
+  }
+
+  // Tampilkan screen pertama
   const firstScreen = document.getElementById('screen-dashboard');
   firstScreen.classList.add('active');
   setTimeout(() => firstScreen.classList.add('visible'), 50);
