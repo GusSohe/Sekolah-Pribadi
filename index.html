@@ -958,7 +958,7 @@
     </div>
     <div class="setting-item">
       <div class="setting-label">Versi</div>
-      <div class="setting-value">1.2.0</div>
+      <div class="setting-value">1.2.1</div>
     </div>
   </div>
 
@@ -1293,10 +1293,14 @@ async function renderMateri(tgl) {
       (isHariIni ? ' · Hari ini' : '') + ' · ' + tema.emoji + ' ' + tema.nama;
   }
 
-  // Cek cache dulu
-  if (appData.materiCache[tgl]) {
-    tampilkanMateri(appData.materiCache[tgl]);
+  // Cek cache dulu; jika soal belum ada di cache, tetap fetch ulang
+  const cachedMateri = appData.materiCache[tgl];
+  if (cachedMateri && cachedMateri.soal) {
+    tampilkanMateri(cachedMateri);
     return;
+  }
+  if (cachedMateri) {
+    tampilkanMateri(cachedMateri); // tampilkan konten segera, lanjut fetch soal
   }
 
   if (!appData.scriptUrl) {
