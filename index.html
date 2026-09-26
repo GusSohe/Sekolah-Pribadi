@@ -487,17 +487,23 @@
   }
 
   .skor-chart {
-    margin-top: 12px;
+    margin-top: 4px;
+  }
+  .skor-tema-block {
+    padding: 12px 0 10px;
+  }
+  .skor-tema-block + .skor-tema-block {
+    border-top: 1px solid var(--text-faint);
+  }
+  .skor-tema-nama {
+    font-size: 0.78rem;
+    color: var(--text-main);
+    text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: 0.01em;
   }
   .skor-bar-row {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
-  }
-  .skor-bar-label {
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    width: 110px;
-    flex-shrink: 0;
-    line-height: 1.3;
+    display: flex; align-items: center; gap: 10px;
   }
   .skor-bar-track {
     flex: 1; height: 6px;
@@ -512,9 +518,10 @@
     transition: width 0.8s ease;
   }
   .skor-bar-val {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: var(--teal);
-    width: 30px;
+    font-weight: 500;
+    width: 34px;
     text-align: right;
     flex-shrink: 0;
   }
@@ -1650,10 +1657,12 @@ function renderProgres() {
     if (!sesiTema.length) return;
     const avg = Math.round(sesiTema.reduce((a,b) => a + b.skor/b.totalSoal*100, 0) / sesiTema.length);
     skorHtml += `
-      <div class="skor-bar-row">
-        <div class="skor-bar-label">${t.emoji} ${t.nama}</div>
-        <div class="skor-bar-track"><div class="skor-bar-fill" style="width:${avg}%"></div></div>
-        <div class="skor-bar-val">${avg}%</div>
+      <div class="skor-tema-block">
+        <div class="skor-tema-nama">${t.emoji} ${t.nama}</div>
+        <div class="skor-bar-row">
+          <div class="skor-bar-track"><div class="skor-bar-fill" style="width:${avg}%"></div></div>
+          <div class="skor-bar-val">${avg}%</div>
+        </div>
       </div>
     `;
   });
