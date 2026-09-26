@@ -957,12 +957,15 @@
       <div class="setting-label">Total sesi selesai</div>
       <div class="setting-value" id="infoTotalSesi">0</div>
     </div>
-    <div class="setting-item">
-      <div class="setting-label">Notifikasi jam 20:00</div>
-      <label class="toggle-switch">
-        <input type="checkbox" id="notifToggle" onchange="toggleNotifikasi(this.checked)">
-        <span class="toggle-slider"></span>
-      </label>
+    <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+        <div class="setting-label">Email pengingat jam 21:00</div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="notifToggle" onchange="toggleNotifikasi(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div style="font-size:0.7rem;color:var(--text-muted)">Jika belum belajar sampai jam 21:00, kami kirim email pengingat</div>
     </div>
     <div class="setting-item">
       <div class="setting-label">Versi</div>
@@ -1746,55 +1749,22 @@ async function loadLaporan() {
 // ═══════════════════════════════════════════════
 
 async function toggleNotifikasi(aktif) {
-  if (aktif) {
-    if (!('Notification' in window)) {
-      showToast('Browser ini tidak mendukung notifikasi');
-      document.getElementById('notifToggle').checked = false;
-      return;
-    }
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') {
-      showToast('Izin notifikasi ditolak');
-      document.getElementById('notifToggle').checked = false;
-      return;
-    }
-    appData.notifAktif = true;
-    saveData(appData);
-    showToast('Notifikasi aktif — kamu akan diingatkan jam 20:00');
-    jadwalkanNotifikasi();
-  } else {
-    appData.notifAktif = false;
-    saveData(appData);
-    showToast('Notifikasi dimatikan');
+  appData.notifAktif = aktif;
+  saveData(appData);
+
+  if (!appData.scriptUrl) {
+    showToast(aktif ? 'Email pengingat diaktifkan' : 'Email pengingat dimatikan');
+    return;
   }
-}
 
-function jadwalkanNotifikasi() {
-  if (!appData.notifAktif) return;
-  if (Notification.permission !== 'granted') return;
+  try {
+    await fetch(appData.scriptUrl + '?action=setNotifPreference&aktif=' + (aktif ? '1' : '0'));
+  } catch(e) {}
 
-  const sudahSelesai = appData.sesiList.some(s => s.tanggal === todayStr());
-  if (sudahSelesai) return;
-
-  const now     = new Date();
-  const jam20   = new Date();
-  jam20.setHours(20, 0, 0, 0);
-
-  if (now >= jam20) return; // sudah lewat jam 20
-
-  const delay = jam20 - now;
-  setTimeout(() => {
-    const masihBelum = !appData.sesiList.some(s => s.tanggal === todayStr());
-    if (masihBelum && appData.notifAktif) {
-      try {
-        new Notification('Sekolah Pribadi', {
-          body: 'Materi hari ini belum kamu baca. Luangkan 10 menit sekarang.',
-          icon: 'icon-192.png',
-          badge: 'icon-192.png'
-        });
-      } catch(e) {}
-    }
-  }, delay);
+  showToast(aktif
+    ? 'Email pengingat aktif — kamu akan diemail jika belum belajar jam 21:00'
+    : 'Email pengingat dimatikan'
+  );
 }
 
 function resetData() {
@@ -1983,9 +1953,6 @@ window.addEventListener('load', () => {
   setTimeout(() => {
     document.getElementById('loadingOverlay').classList.add('hidden');
     renderDashboard();
-    if (appData.notifAktif && 'Notification' in window && Notification.permission === 'granted') {
-      jadwalkanNotifikasi();
-    }
   }, 1200);
 });
 </script>
