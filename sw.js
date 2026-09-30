@@ -1,7 +1,7 @@
 // Service Worker — Sekolah Pribadi
-// Cache-first untuk app shell, network-first untuk API
+// Network-first untuk halaman (HTML), cache-first untuk aset statis, API tidak di-cache
 
-const CACHE = 'sp-v1.5';
+const CACHE = 'sp-v1.6';
 const SHELL = [
   '/Sekolah-Pribadi/',
   '/Sekolah-Pribadi/index.html',
@@ -36,6 +36,22 @@ self.addEventListener('fetch', e => {
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('fonts.googleapis.com') ||
       url.hostname.includes('fonts.gstatic.com')) {
+    return;
+  }
+
+  // Halaman: selalu coba jaringan dulu supaya update langsung sampai; cache hanya untuk offline
+  if (e.request.mode === 'navigate' || e.request.destination === 'document') {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-cache' }).then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() =>
+        caches.match(e.request).then(c => c || caches.match('/Sekolah-Pribadi/index.html'))
+      )
+    );
     return;
   }
 

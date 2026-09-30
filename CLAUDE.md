@@ -3,11 +3,11 @@
 ## Stack
 - Frontend: single-file `index.html` → GitHub Pages `gussohe.github.io/Sekolah-Pribadi`
 - Backend: Google Apps Script `Code.gs` (TIDAK di repo ini)
-- Service Worker: `sw.js`, cache-first. Cache version saat ini: `sp-v1.5`
+- Service Worker: `sw.js`, halaman HTML network-first (update langsung sampai, cache hanya untuk offline), aset statis cache-first. Cache version saat ini: `sp-v1.6`
 - Storage: `localStorage` key `sekolahPribadi_v1`
 
 ## Aturan Wajib
-- Setiap perubahan `index.html` HARUS disertai bump `CACHE` di `sw.js`, kalau tidak HP user tetap menyajikan versi lama.
+- Perubahan `index.html` tidak perlu bump `CACHE` (HTML network-first). Bump `CACHE` di `sw.js` hanya bila aset statis di `SHELL` (ikon, manifest) berubah atau logika `sw.js` diubah.
 - Setiap push langsung PR + squash-merge ke main tanpa konfirmasi. Branch kerja: `claude/lucid-cerf-fkg3rz`.
 - Kalau user harus mengerjakan sesuatu manual (mis. di Apps Script), berikan langkah bernomor dan lokasi persisnya (cari baris apa, ganti jadi apa).
 - Lingkungan sesi ini tidak bisa akses GitHub Pages/Google. Verifikasi visual: `python3 -m http.server 8090` + Playwright (`/opt/node22/lib/node_modules/playwright`, chromium `/opt/pw-browsers/chromium`, arg `--no-sandbox`), inject localStorage `sekolahPribadi_v1`. ID nav: `#nav-dashboard`, `#nav-materi`, `#nav-progres`, `#nav-setting`.
