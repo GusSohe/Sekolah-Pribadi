@@ -1730,17 +1730,47 @@ async function loadLaporan() {
     const res  = await fetch(appData.scriptUrl + '?action=getLaporan');
     const json = await res.json();
     if (json.status === 'ok' && json.isi) {
-      card.innerHTML = `
-        <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.04em;text-transform:uppercase">${json.judul || 'Laporan Terbaru'}</div>
-        <div class="laporan-body">${json.isi}</div>
-        <button class="btn-secondary" onclick="loadLaporan()" style="margin-top:12px">Muat Ulang</button>`;
+      tampilkanLaporan(card, json);
     } else {
-      card.innerHTML = '<div class="laporan-loading">Laporan belum tersedia.<br><small style="color:var(--text-faint)">' + (json.pesan || '') + '</small></div>' +
-        '<button class="btn-secondary" onclick="loadLaporan()" style="margin-top:8px">Coba lagi</button>';
+      card.innerHTML = '<div class="laporan-loading">Laporan mingguan belum dibuat.</div>' +
+        '<button class="btn-primary" onclick="buatLaporan()">Buat Laporan Sekarang</button>';
     }
   } catch(e) {
     card.innerHTML = '<div class="laporan-loading">Gagal memuat laporan.<br>' + (!navigator.onLine ? 'Tidak ada koneksi.' : 'Coba lagi.') + '</div>' +
       '<button class="btn-secondary" onclick="loadLaporan()" style="margin-top:8px">Coba lagi</button>';
+  }
+}
+
+function tampilkanLaporan(card, json) {
+  card.innerHTML = `
+    <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.04em;text-transform:uppercase">${json.judul || 'Laporan Terbaru'}</div>
+    <div class="laporan-body">${json.isi}</div>
+    <button class="btn-primary" onclick="buatLaporan()" style="margin-top:16px">Perbarui Laporan</button>
+    <button class="btn-secondary" onclick="loadLaporan()">Muat Ulang</button>`;
+}
+
+async function buatLaporan() {
+  if (!appData.scriptUrl) {
+    showToast('URL Apps Script belum diset');
+    return;
+  }
+  const card = document.getElementById('laporanCard');
+  card.innerHTML = '<div class="laporan-loading"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px"></div>Menganalisis jawabanmu…<br><small style="color:var(--text-faint)">Butuh sekitar 20–40 detik</small></div>';
+  try {
+    const res  = await fetch(appData.scriptUrl + '?action=generateLaporan');
+    const json = await res.json();
+    if (json.status === 'ok' && json.isi) {
+      tampilkanLaporan(card, json);
+      return;
+    }
+    const pesan = json.status === 'kosong'
+      ? 'Belum ada jawaban kuis yang bisa dianalisis.'
+      : 'Gagal membuat laporan. Coba lagi sebentar lagi.';
+    card.innerHTML = '<div class="laporan-loading">' + pesan + '</div>' +
+      '<button class="btn-primary" onclick="buatLaporan()">Buat Laporan Sekarang</button>';
+  } catch(e) {
+    card.innerHTML = '<div class="laporan-loading">Gagal membuat laporan.<br>' + (!navigator.onLine ? 'Tidak ada koneksi.' : 'Coba lagi.') + '</div>' +
+      '<button class="btn-primary" onclick="buatLaporan()">Buat Laporan Sekarang</button>';
   }
 }
 
