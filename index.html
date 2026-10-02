@@ -659,6 +659,18 @@
   }
   .laporan-loading { font-size: 0.82rem; color: var(--text-muted); text-align: center; padding: 20px; }
 
+  /* ── FOKUS PERTEMUAN (kurikulum) ── */
+  .materi-fokus {
+    margin: 0 0 16px; padding: 12px 14px;
+    background: var(--bg-card); border-radius: var(--radius-sm);
+    font-size: 0.78rem; line-height: 1.5; color: var(--text-main);
+  }
+  .materi-fokus-label {
+    display: block; margin-bottom: 3px;
+    font-size: 0.65rem; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--teal);
+  }
+
   /* ── KALENDER MATERI ── */
   .materi-cal-top {
     padding: 52px 0 8px;
@@ -1308,6 +1320,7 @@ async function renderMateri(tgl) {
   const cachedMateri = appData.materiCache[tgl];
   if (cachedMateri && cachedMateri.soal) {
     tampilkanMateri(cachedMateri);
+    segarkanMateri(tgl); // periksa diam-diam apakah isinya sudah diperbarui di server
     return;
   }
   if (cachedMateri) {
@@ -1325,13 +1338,14 @@ async function renderMateri(tgl) {
   }
 
   document.getElementById('materiContent').innerHTML =
-    '<div class="empty-state"><div class="spinner" style="margin:0 auto 16px"></div><p>Memuat materi...</p></div>';
+    '<div class="empty-state"><div class="spinner" style="margin:0 auto 16px"></div><p>Memuat materi...<br>' +
+    '<small style="color:var(--text-faint)">Jika materi hari ini belum disiapkan, pembuatannya bisa memakan 2–3 menit.</small></p></div>';
 
   const tglParam = tgl;
   try {
     if (!navigator.onLine) throw new Error('offline');
     const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 30000);
+    const tid = setTimeout(() => controller.abort(), WAKTU_TUNGGU_MATERI);
     const res  = await fetch(appData.scriptUrl + '?action=getMateri&tgl=' + tglParam, { signal: controller.signal });
     clearTimeout(tid);
 
@@ -1352,10 +1366,45 @@ async function renderMateri(tgl) {
   } catch(e) {
     let msg = 'Gagal memuat materi.';
     if (e.message === 'offline' || !navigator.onLine) msg = 'Tidak ada koneksi internet.';
-    else if (e.name === 'AbortError') msg = 'Koneksi terlalu lambat (timeout 30 detik).';
+    else if (e.name === 'AbortError') msg = 'Materi belum selesai disiapkan (lebih dari 4 menit). Coba lagi sebentar lagi.';
     else if (e.message.startsWith('http_')) msg = 'Layanan tidak merespons (kode ' + e.message.replace('http_','') + ').';
     tampilkanError(msg, 'Periksa koneksi atau coba lagi.', tglParam);
   }
+}
+
+const WAKTU_TUNGGU_MATERI = 240000;
+
+function samaIsi(a, b) {
+  const n = s => String(s || '').replace(/\s+/g, ' ').trim();
+  return n(a.materi) === n(b.materi) && n(a.hukum) === n(b.hukum) &&
+    JSON.stringify(a.soal) === JSON.stringify(b.soal);
+}
+
+// Ambil ulang materi di belakang layar; bila isi di server berubah, perbarui cache dan tampilan.
+async function segarkanMateri(tgl) {
+  if (!appData.scriptUrl || !navigator.onLine) return;
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), WAKTU_TUNGGU_MATERI);
+    const res = await fetch(appData.scriptUrl + '?action=getMateri&tgl=' + tgl, { signal: controller.signal });
+    clearTimeout(tid);
+    if (!res.ok) return;
+    const json = await res.json();
+    if (json.status !== 'ok' || !json.data || !json.data.soal) return;
+    const lama = appData.materiCache[tgl];
+    if (lama && samaIsi(lama, json.data)) return;
+    appData.materiCache[tgl] = json.data;
+    saveData(appData);
+    const layar = document.getElementById('screen-materi');
+    if (materiTgl === tgl && layar && layar.classList.contains('active')) {
+      tampilkanMateri(json.data);
+      showToast('Materi diperbarui');
+    }
+  } catch (e) { /* diam: cache lama tetap dipakai */ }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function tampilkanError(judul, detail, tgl) {
@@ -1395,6 +1444,11 @@ function bersihkanTeks(text) {
 function tampilkanMateri(data) {
   materiAktif = data;
   let html = '';
+
+  if (data.fokus) {
+    html += '<div class="materi-fokus"><span class="materi-fokus-label">' +
+      escapeHtml(data.level || 'Fokus pertemuan') + '</span>' + escapeHtml(data.fokus) + '</div>';
+  }
 
   if (data.materi) {
     const bersih = bersihkanTeks(data.materi);
