@@ -2,42 +2,34 @@
 
 ## Stack
 - Frontend: single-file `index.html` → GitHub Pages `gussohe.github.io/Sekolah-Pribadi`
-- Backend: Google Apps Script `Code.gs` (TIDAK di repo ini)
+- Backend: Google Apps Script. Sumber utuhnya di `apps-script/Code.gs` (user menempelnya manual ke editor Apps Script; tidak ada deploy otomatis). Repo ini publik, jadi ID Drive/Spreadsheet di sana berupa placeholder `ISI_ID_...`.
 - Service Worker: `sw.js`, halaman HTML network-first (update langsung sampai, cache hanya untuk offline), aset statis cache-first. Cache version saat ini: `sp-v1.6`
-- Storage: `localStorage` key `sekolahPribadi_v1`
+- Storage: `localStorage` key `sekolahPribadi_v1` (berisi `sesiList` = progres user; JANGAN sarankan "clear site data" atau reset)
 
 ## Aturan Wajib
-- Perubahan `index.html` tidak perlu bump `CACHE` (HTML network-first). Bump `CACHE` di `sw.js` hanya bila aset statis di `SHELL` (ikon, manifest) berubah atau logika `sw.js` diubah.
-- Setiap push langsung PR + squash-merge ke main tanpa konfirmasi. Branch kerja: `claude/lucid-cerf-fkg3rz`.
-- Kalau user harus mengerjakan sesuatu manual (mis. di Apps Script), berikan langkah bernomor dan lokasi persisnya (cari baris apa, ganti jadi apa).
-- Lingkungan sesi ini tidak bisa akses GitHub Pages/Google. Verifikasi visual: `python3 -m http.server 8090` + Playwright (`/opt/node22/lib/node_modules/playwright`, chromium `/opt/pw-browsers/chromium`, arg `--no-sandbox`), inject localStorage `sekolahPribadi_v1`. ID nav: `#nav-dashboard`, `#nav-materi`, `#nav-progres`, `#nav-setting`.
+- Perubahan `index.html` tidak perlu bump `CACHE` (HTML network-first). Bump `CACHE` di `sw.js` hanya bila aset statis di `SHELL` berubah atau logika `sw.js` diubah.
+- Setiap push langsung PR + squash-merge ke main tanpa konfirmasi. Branch kerja: `claude/lucid-cerf-fkg3rz`. Karena squash, awali tiap pekerjaan dengan `git fetch origin main && git checkout -B claude/lucid-cerf-fkg3rz origin/main` agar tidak konflik.
+- Kalau user harus mengerjakan sesuatu manual (mis. di Apps Script), berikan langkah bernomor dan lokasi persisnya.
+- Jangan menaruh URL Apps Script, API key, atau ID Drive/Spreadsheet milik user di repo (publik). Minta user bila perlu.
+- Lingkungan sesi ini tidak bisa akses GitHub Pages/Google. Verifikasi: `python3 -m http.server 8090` + Playwright (`/opt/node22/lib/node_modules/playwright`, chromium `/opt/pw-browsers/chromium`, arg `--no-sandbox`), inject localStorage `sekolahPribadi_v1`, backend palsu lewat `page.route`. ID nav: `#nav-dashboard`, `#nav-materi`, `#nav-progres`, `#nav-setting`. Logika `Code.gs` diuji di Node dengan tiruan Drive/Docs/Forms/Lock (`vm` + stub).
 
-## Apps Script URL
-`https://script.google.com/macros/s/AKfycbw-anCDgiRG-ziSXjU-oHz33NMk29vmtR53vNsMZR8r0kz1ANcdyJFZ6YJ3uLcBHkJviQ/exec`
+## Desain konten (apps-script/Code.gs)
+- `KURIKULUM`: per hari (Sen–Sab) 8 langkah {f: fokus tema, h: fokus hukum}; langkah 1-3 Dasar, 4-6 Menengah, 7-8 Lanjut; setelah langkah 8 putaran ke-2 (kedalaman lebih tinggi). Minggu ke-1 = minggu yang memuat `CONFIG.TGL_MULAI` (24 Sep 2026). Nama `tema` harus sama persis dengan objek `TEMA` di index.html (grafik skor mencocokkan nama).
+- Anti-pengulangan: materi, hukum, dan soal dibuat dengan membaca sampai 6 dokumen sebelumnya pada hari yang sama (`ambilRiwayat`), dan soal baru yang mirip pertanyaan lama (Jaccard >= 0.7) ditolak lalu diulang.
+- Soal dibuat DARI teks materi+hukum yang baru ditulis, divalidasi (10 soal, panjang pilihan setara, tanpa "semua benar"), lalu posisi jawaban benar diacak merata di kode.
+- Prompt hukum: kasus nyata hanya bila yakin, selain itu "ILUSTRASI HIPOTETIS"; pelajaran harus sesuai fakta; KUHP lama vs KUHP Nasional (UU 1/2023, berlaku 2 Jan 2026) tidak boleh dicampur.
+- Dokumen Drive memuat baris `FOKUS:` dan `LEVEL:`; `getMateri` mengembalikan `fokus` dan `level`, ditampilkan sebagai tag di halaman Materi.
+- Frontend menampilkan cache lalu `segarkanMateri()` mengambil ulang diam-diam dan menimpa cache bila isi di server berubah (jadi edit/buat ulang di Drive sampai ke HP). Timeout memuat materi 240 dtk karena pembuatan di server bisa 2-3 menit.
+- Penjaga: `getMateri` hanya untuk tanggal antara `TGL_MULAI` dan hari ini; `generateLaporan` dijeda 10 menit.
 
-Action yang dipanggil frontend: `getMateri`, `submitHasil`, `getLaporan`, `setNotifPreference` (baru), `generateLaporan` (baru).
+## [PENDING] Pasang apps-script/Code.gs ke Apps Script (belum dikonfirmasi user)
+Menggabungkan semua perubahan backend yang tertunda: kurikulum, soal dari materi, anti-ulang, email pengingat 21:00 (`kirimPengingat`, `setNotifPreference`, `lastSubmitDate`), tombol laporan (`generateLaporan`), perbaikan prompt hukum, penjaga tanggal, kunci anti-ganda.
+Langkah user: salin 3 ID dari CONFIG lama; tempel seluruh isi file; isi 3 placeholder; Save; jalankan `tesEmail` (beri izin kirim email); jalankan `setupTrigger` (jadwal baru: jalankanHarian 04:00, kirimPengingat 21:00, analisisMingguan Minggu 14:00); Deploy → Manage deployments → pensil → New version → Deploy.
+Opsional: `buatUlangMateriHariIni()` untuk membuang dokumen hari ini yang salah (mis. kasus Geprek Bensu 2 Okt 2026) dan membuatnya ulang.
 
-## Pekerjaan Manual Tertunda di Apps Script (Code.gs)
-Frontend sudah siap; status di bawah = belum dikonfirmasi user sudah dipasang.
+## Catatan risiko yang belum ditangani
+- `submitHasilResponse` dan `analisisMingguan` memakai `getActiveSheet()`. `buatForm` menautkan tiap Form ke spreadsheet yang sama sehingga muncul tab "Form Responses N"; tab aktif bisa bukan tab hasil kuis. Belum diverifikasi; bila laporan terasa salah, periksa spreadsheet.
+- URL Web App pernah ter-commit ke CLAUDE.md (riwayat git publik). Bila ingin, buat New deployment (URL baru) dan perbarui di Pengaturan app.
 
-### [PENDING] A. Email pengingat jam 21:00
-1. `doGet()`: tambah `if (action === 'setNotifPreference') return setNotifPreferenceResponse(params);`
-2. Tambah fungsi `setNotifPreferenceResponse(params)` → simpan `notifAktif` ('true'/'false') di `PropertiesService.getScriptProperties()`.
-3. `submitHasilResponse()`: sebelum `return jsonResponse({ status: 'ok' })`, simpan `lastSubmitDate` (= `params.tgl || todayStr()`).
-4. `jalankanHarian()`: setelah `Logger.log("Selesai...")`, kirim `MailApp.sendEmail` ke `Session.getActiveUser().getEmail()` bila `notifAktif === 'true'` dan `lastSubmitDate !== hari ini`.
-5. `setupTrigger()`: `.atHour(20)` → `.atHour(21)`, lalu jalankan `setupTrigger()` sekali.
-
-### [PENDING] B. Tombol "Buat Laporan Sekarang" (action `generateLaporan`)
-1. `doGet()`: tambah `if (action === 'generateLaporan') return generateLaporanResponse();`
-2. `analisisMingguan()`: `return null` saat data kosong; setelah `panggilClaude`, jika hasil `"ERROR"` lempar error; di akhir `return { judul: namaFile, isi: laporan };`
-3. Tambah fungsi `generateLaporanResponse()` yang memanggil `analisisMingguan()` dan mengembalikan `{status:'ok', judul, isi}` atau `{status:'kosong'}`.
-
-### [PENDING] C. Prompt `generateHukum()` — kasus nyata sering salah/terbalik
-Temuan 2 Okt 2026: "Geprek Bensu" ditulis seolah pemakai pertama tanpa pendaftaran mengalahkan pendaftar, padahal "pelajaran"-nya menyimpulkan sebaliknya (daftar lebih dulu lebih kuat). Fakta sebenarnya: PT Ayam Geprek Benny Sujono mendaftar "Bensu" lebih dulu (3 Mei 2017), merek Ruben Onsu (7 Jun 2018) dibatalkan, pertimbangan itikad tidak baik. Model tidak punya akses putusan saat generate, jadi detail kasus rawan karangan.
-Perbaikan: di `generateHukum()` ganti butir 2 prompt jadi aturan "kasus nyata hanya bila yakin pihak, amar, dan pertimbangannya; jika tidak yakin tulis ILUSTRASI HIPOTETIS bernama fiktif dan beri label" + wajibkan pelajaran diturunkan langsung dari fakta (siapa menang, atas dasar apa). Isi hari yang sudah salah harus diedit manual di Google Doc, dan cache HP (`materiCache`) tidak ikut berubah kecuali frontend diberi revalidasi (belum dibuat).
-Jangan sarankan "clear site data" ke user: itu menghapus `sesiList` (progres).
-
-Setelah semua perubahan Code.gs: Deploy → Manage deployments → edit → New version → Deploy.
-
-## TEMA Mapping (harus cocok persis dengan `TEMA_HARIAN` di Apps Script)
+## TEMA Mapping
 1 Memahami Manusia · 2 Memahami Uang · 3 Komunikasi · 4 Memahami Tubuh · 5 Personal Branding · 6 Kecerdasan Emosional · 0 libur
