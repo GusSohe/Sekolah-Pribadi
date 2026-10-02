@@ -32,6 +32,11 @@ Frontend sudah siap; status di bawah = belum dikonfirmasi user sudah dipasang.
 2. `analisisMingguan()`: `return null` saat data kosong; setelah `panggilClaude`, jika hasil `"ERROR"` lempar error; di akhir `return { judul: namaFile, isi: laporan };`
 3. Tambah fungsi `generateLaporanResponse()` yang memanggil `analisisMingguan()` dan mengembalikan `{status:'ok', judul, isi}` atau `{status:'kosong'}`.
 
+### [PENDING] C. Prompt `generateHukum()` — kasus nyata sering salah/terbalik
+Temuan 2 Okt 2026: "Geprek Bensu" ditulis seolah pemakai pertama tanpa pendaftaran mengalahkan pendaftar, padahal "pelajaran"-nya menyimpulkan sebaliknya (daftar lebih dulu lebih kuat). Fakta sebenarnya: PT Ayam Geprek Benny Sujono mendaftar "Bensu" lebih dulu (3 Mei 2017), merek Ruben Onsu (7 Jun 2018) dibatalkan, pertimbangan itikad tidak baik. Model tidak punya akses putusan saat generate, jadi detail kasus rawan karangan.
+Perbaikan: di `generateHukum()` ganti butir 2 prompt jadi aturan "kasus nyata hanya bila yakin pihak, amar, dan pertimbangannya; jika tidak yakin tulis ILUSTRASI HIPOTETIS bernama fiktif dan beri label" + wajibkan pelajaran diturunkan langsung dari fakta (siapa menang, atas dasar apa). Isi hari yang sudah salah harus diedit manual di Google Doc, dan cache HP (`materiCache`) tidak ikut berubah kecuali frontend diberi revalidasi (belum dibuat).
+Jangan sarankan "clear site data" ke user: itu menghapus `sesiList` (progres).
+
 Setelah semua perubahan Code.gs: Deploy → Manage deployments → edit → New version → Deploy.
 
 ## TEMA Mapping (harus cocok persis dengan `TEMA_HARIAN` di Apps Script)
